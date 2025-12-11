@@ -26,8 +26,8 @@ Then oe_fl_fig_xxx.R could be uesd for figure generating.
 ├── pre-processing
 │   ├── run_oefl.sh
 │   └── sub-script
-│       ├── isoquant_oe.py
-│       ├── isoquant_osn.py
+│       ├── iso_proc_oe.py
+│       ├── iso_proc_osn.py
 │       ├── calcReads_oe.R
 │       └── calcReads_osn.R
 ├── oe_fl_fig_01.R
