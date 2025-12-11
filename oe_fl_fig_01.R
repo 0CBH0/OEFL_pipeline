@@ -22,10 +22,10 @@ options(stringsAsFactors=FALSE)
 
 col_list <- c(c("#46998b", "#847acc", "#ef8560", "#6994b3", "#d1934b", "#8fb350", "#de9cba", "#7b469e", 
 	"#9e4747", "#1e8751", "#cc9a04", "#4bb35b", "#e13344"), brewer.pal(12,"Set3")[c(6,5,4,3,1)])
-text_size <- 13
-title_size <- 15
+text_size <- 8
+title_size <- 9
 choose_font("Arial")
-tag_thm <- theme(plot.tag=element_text(size=title_size, colour="black"), plot.margin=margin(-3,-3,-3,-3), panel.spacing=unit(0, "pt"), 
+tag_thm <- theme(plot.tag=element_text(size=title_size, face="bold", colour="black"), plot.margin=margin(-3,-3,-3,-3), panel.spacing=unit(0, "pt"), 
 	panel.background=element_rect(fill="transparent", colour=NA),  plot.background=element_rect(fill="transparent", colour=NA), 
 	legend.box.spacing=unit(0, "pt"))
 
@@ -48,38 +48,38 @@ rec_a <- data.frame(X=sce_rna$nFeature_RNA, Y=sce_nano$nFeature_RNA)
 #rec_a <- data.frame(X=log10(sce_rna$nFeature_RNA), Y=log10(sce_nano$nFeature_RNA))
 pa <- wrap_elements(ggplot(rec_a, aes(x=X, y=Y))+
 	geom_pointdensity()+scale_color_viridis()+
-	labs(title=NULL, x="Genes of Illumina (10^3)", y="Genes of Nanopore (10^3)", color="Density")+
+	labs(title=NULL, x=bquote("Genes of Illumina "(10^3)), y=bquote("Genes of Nanopore "(10^3)), color="Density")+
 	stat_smooth(method=lm, se=F, colour="#e13344", linetype="dashed", linewidth=2)+
 	scale_x_continuous(limits=c(min(rec_a$X), max(rec_a$X)+0.1), breaks=c(1000, 2000, 3000, 4000), labels=c(1, 2, 3, 4), expand=c(0, 0))+
 	scale_y_continuous(limits=c(min(rec_a$Y), max(rec_a$Y)+0.1), breaks=c(1000, 2000, 3000), labels=c(1, 2, 3), expand=c(0, 0))+
 	geom_text(data=data.frame(x=4000, y=min(rec_a$Y)+50), aes(x=x,y=y), 
-	label=paste0("R=", round(cor(rec_a$X, rec_a$Y), 2)), size=4.5, vjust=0, hjust=0.5)+
-	theme(axis.line=element_line(linetype=1, colour='black'), 
+	label=paste0("R=", round(cor(rec_a$X, rec_a$Y), 2)), size=3, vjust=0, hjust=0.5)+
+	theme(axis.line=element_line(linewidth=0.35, colour='black'), axis.ticks=element_line(linewidth=0.35, color="black"), 
 	axis.text=element_text(size=text_size, colour="black"), 
 	axis.title=element_text(size=title_size, colour="black"), 
 	plot.title=element_text(size=title_size, hjust=0.5, colour="black"), 
 	legend.text=element_text(size=text_size, colour="black"), 
 	legend.title=element_text(size=title_size, colour="black"), 
-	legend.box.spacing=unit(0, "pt"), 
+	legend.box.spacing=unit(0, "pt"), legend.key.size=unit(12, "pt"), 
 	legend.key=element_blank(), legend.background=element_blank(), 
 	panel.background=element_rect(0, linetype=0))+tag_thm)+tag_thm
 rec_b <- data.frame(X=sce_rna$nCount_RNA, Y=sce_nano$nCount_RNA)
 #rec_b <- data.frame(X=log10(sce_rna$nCount_RNA), Y=log10(sce_nano$nCount_RNA))
 pb <- wrap_elements(ggplot(rec_b, aes(x=X, y=Y))+
 	geom_pointdensity()+scale_color_viridis()+
-	labs(title=NULL, x="UMI of Illumina (10^3)", y="UMI of Nanopore (10^3)", color="Density")+
+	labs(title=NULL, x=bquote("UMI of Illumina "(10^3)), y=bquote("UMI of Nanopore "(10^3)), color="Density")+
 	stat_smooth(method=lm, se=F, colour="#e13344", linetype="dashed", linewidth=2)+
 	scale_x_continuous(limits=c(min(rec_b$X), max(rec_b$X)+0.1), breaks=c(10000, 20000, 30000), labels=c(10, 20, 30), expand=c(0, 0))+
 	scale_y_continuous(limits=c(min(rec_b$Y), max(rec_b$Y)+0.1), breaks=seq(2000, 8000, 2000), labels=c(2, 4, 6, 8), expand=c(0, 0))+
 	geom_text(data=data.frame(x=30000, y=min(rec_b$Y)+100), aes(x=x,y=y), 
-	label=paste0("R=", round(cor(rec_b$X, rec_b$Y), 2)), size=4.5, vjust=0, hjust=0.5)+
-	theme(axis.line=element_line(linetype=1, colour='black'), 
+	label=paste0("R=", round(cor(rec_b$X, rec_b$Y), 2)), size=3, vjust=0, hjust=0.5)+
+	theme(axis.line=element_line(linewidth=0.35, colour='black'), axis.ticks=element_line(linewidth=0.35, color="black"), 
 	axis.text=element_text(size=text_size, colour="black"), 
 	axis.title=element_text(size=title_size, colour="black"), 
 	plot.title=element_text(size=title_size, hjust=0.5, colour="black"), 
 	legend.text=element_text(size=text_size, colour="black"), 
 	legend.title=element_text(size=title_size, colour="black"), 
-	legend.box.spacing=unit(0, "pt"), 
+	legend.box.spacing=unit(0, "pt"), legend.key.size=unit(12, "pt"), 
 	legend.key=element_blank(), legend.background=element_blank(), 
 	panel.background=element_rect(0, linetype=0))+tag_thm)+tag_thm
 
@@ -98,12 +98,11 @@ for (i in 1:length(types))
 }
 rec_c$X <- factor(rec_c$X, levels=types)
 rec_c$Y <- factor(rec_c$Y, levels=types)
-pca <- ggplot(rec_c, aes(x=X, y=Y, fill=Val))+geom_tile()+labs(title=NULL, x=NULL, y=NULL, fill="%")+
+pca <- ggplot(rec_c, aes(x=X, y=Y, fill=Val))+geom_tile()+labs(title=NULL, x=NULL, y=NULL, fill="PCT. (%)")+
 	scale_fill_viridis()+scale_y_discrete(expand=c(0, 0))+scale_x_discrete(expand=c(0, 0))+
 	theme(panel.background=element_blank(), axis.ticks=element_blank(), 
 	strip.text=element_blank(), strip.background=element_blank(), axis.text=element_blank(), 
-	plot.title=element_text(size=title_size, colour="black", face="bold", hjust=0.5), 
-	legend.box.spacing=unit(0, "pt"), legend.margin=margin(0, 0, 0, 0), 
+	legend.box.spacing=unit(0, "pt"), legend.key.size=unit(12, "pt"), legend.margin=margin(0, 0, 0, 0), 
 	legend.title=element_text(size=title_size, colour="black"), 
 	legend.text=element_text(size=text_size, colour="black"))+tag_thm
 type_x <- intersect(types, sce_rna$cell.subtype_fix)
@@ -133,13 +132,13 @@ rec_da <- data.frame(X=sce_rna@reductions$umap@cell.embeddings[,2],
 pda <- ggplot(rec_da, aes(x=X, y=Y, color=Type))+geom_point(size=1)+
 	labs(title="Identified with illumina", x="UMAP1", y="UMAP2", colour="Type")+
 	scale_color_manual(values=cell_col, drop=F)+
-	guides(colour=guide_legend(ncol=2, override.aes=list(size=4), reverse=T))+
-	theme(axis.line=element_blank(), 
-	panel.border=element_rect(color="black", fill=NA, linewidth=1), 
+	guides(colour=guide_legend(ncol=2, override.aes=list(size=3), reverse=T))+
+	theme(axis.line=element_blank(), panel.border=element_rect(color="black", fill=NA, linewidth=0.35), 
+	axis.ticks=element_line(linewidth=0.35, color="black"), 
 	axis.text.x=element_text(size=text_size, colour="black"), 
 	axis.text.y=element_text(size=text_size, colour="black", angle=90, hjust=0.5, vjust=0.5), 
 	axis.title=element_text(size=title_size, colour="black"), 
-	plot.title=element_text(size=title_size, hjust=0.5, colour="black"), 
+	plot.title=element_text(size=title_size, hjust=0.5, colour="black"), legend.key.size=unit(12, "pt"), 
 	legend.box.spacing=unit(0, "pt"), 
 	legend.key=element_blank(), legend.background=element_blank(), 
 	legend.text=element_text(size=text_size, colour="black"), 
@@ -154,12 +153,13 @@ rec_db <- data.frame(Y=sce_nano@reductions$umap@cell.embeddings[,2],
 pdb <- ggplot(rec_db, aes(x=X, y=Y, color=Type))+geom_point(size=1)+
 	labs(title="Identified with nanopore", x="UMAP1", y="UMAP2", colour="Type")+
 	scale_color_manual(values=cell_col, drop=F)+
-	guides(colour=guide_legend(ncol=2, override.aes=list(size=4), reverse=T))+
-	theme(legend.position="none", panel.border=element_rect(color="black", fill=NA, linewidth=1), 
+	guides(color=guide_legend(ncol=2, override.aes=list(size=3), reverse=T))+
+	theme(legend.position="none", axis.line=element_blank(), panel.border=element_rect(color="black", fill=NA, linewidth=0.35), 
+	axis.ticks=element_line(linewidth=0.35, color="black"), 
 	axis.text.x=element_text(size=text_size, colour="black"), 
 	axis.text.y=element_text(size=text_size, colour="black", angle=90, hjust=0.5, vjust=0.5), 
 	axis.title=element_text(size=title_size, colour="black"), 
-	plot.title=element_text(size=title_size, hjust=0.5, colour="black"), 
+	plot.title=element_text(size=title_size, hjust=0.5, colour="black"), legend.key.size=unit(12, "pt"), 
 	legend.box.spacing=unit(0, "pt"), 
 	legend.key=element_blank(), legend.background=element_blank(), 
 	panel.background=element_rect(0, linetype=0))+tag_thm
@@ -168,25 +168,31 @@ rec_dc$Var1 <- factor(rec_dc$Var1, levels=types)
 #rec_dc$Freq <- rec_dc$Freq*100/sum(rec_dc$Freq)
 pdc <- ggplot(rec_dc, aes(x=log10(Freq), y=Var1, fill=Var1))+
 	geom_bar(stat="identity", position=position_dodge(0.8))+
-	scale_fill_manual(values=cell_col, drop=F)+labs(title=NULL, x="#Cell(log10)", y=NULL)+
+	scale_fill_manual(values=cell_col, drop=F)+labs(title=NULL, x="#Cell (log10)", y=NULL)+
 	scale_x_continuous(breaks=c(0, 3), expand=c(0, 0))+
-	theme(panel.background=element_blank(), axis.line.x=element_line(linetype=1,colour="black"), 
-	axis.ticks.x=element_line(color="black"), axis.text.x=element_text(size=text_size, colour="black"), 
+	theme(panel.background=element_blank(), 
+	axis.line.x=element_line(linewidth=0.35, colour='black'), axis.ticks.x=element_line(linewidth=0.35, color="black"), 
+	axis.text.x=element_text(size=text_size, colour="black"), 
 	axis.title.x=element_text(size=title_size, colour="black"), 
 	axis.ticks.y=element_blank(), axis.text.y=element_blank(), 
-	axis.title.y=element_blank(), legend.position="none")+tag_thm
+	axis.title.y=element_blank(), legend.position="none")+theme(plot.margin=margin(-3,-3,-3, 3), panel.spacing=unit(0, "pt"), 
+	panel.background=element_rect(fill="transparent", colour=NA),  plot.background=element_rect(fill="transparent", colour=NA), 
+	legend.box.spacing=unit(0, "pt"))
 rec_dd <- data.frame(table(sce_nano$cell.subtype_fix))
 rec_dd$Var1 <- factor(rec_dd$Var1, levels=types)
 #rec_dd$Freq <- rec_dd$Freq*100/sum(rec_dd$Freq)
 pdd <- ggplot(rec_dd, aes(x=log10(Freq), y=Var1, fill=Var1))+
 	geom_bar(stat="identity", position=position_dodge(0.8))+
-	scale_fill_manual(values=cell_col, drop=F)+labs(title=NULL, x="#Cell(log10)", y=NULL)+
+	scale_fill_manual(values=cell_col, drop=F)+labs(title=NULL, x="#Cell (log10)", y=NULL)+
 	scale_x_continuous(breaks=c(0, 3), expand=c(0, 0))+
-	theme(panel.background=element_blank(), axis.line.x=element_line(linetype=1,colour="black"), 
-	axis.ticks.x=element_line(color="black"), axis.text.x=element_text(size=text_size, colour="black"), 
+	theme(panel.background=element_blank(), 
+	axis.line.x=element_line(linewidth=0.35, colour='black'), axis.ticks.x=element_line(linewidth=0.35, color="black"), 
+	axis.text.x=element_text(size=text_size, colour="black"), 
 	axis.title.x=element_text(size=title_size, colour="black"), 
 	axis.ticks.y=element_blank(), axis.text.y=element_blank(), 
-	axis.title.y=element_blank(), legend.position="none")+tag_thm
+	axis.title.y=element_blank(), legend.position="none")+theme(plot.margin=margin(-3,-3,-3, 3), panel.spacing=unit(0, "pt"), 
+	panel.background=element_rect(fill="transparent", colour=NA),  plot.background=element_rect(fill="transparent", colour=NA), 
+	legend.box.spacing=unit(0, "pt"))
 pd <- wrap_elements(wrap_plots(list(pda, pdc, pdb, pdd), nrow=1, widths=c(10, 1, 10, 1))+
 	plot_layout(guides="collect"))+tag_thm
 
@@ -229,31 +235,31 @@ rec_eb$Group <- factor(rec_eb$Group, levels=c("OSN lineage", "Non-OSN lineage"))
 rec_eb$Gene <- factor(rec_eb$Gene, levels=marker_list)
 rec_eb$Type <- factor(rec_eb$Type, levels=types)
 pea <- ggplot(rec_ea, aes(x=Gene, y=Type, size=Pct.exp, color=Avg.exp))+
-	geom_point()+scale_radius(range=c(0, 3))+
+	geom_point()+scale_radius(range=c(0, 2.3))+
 	labs(title="Illumina", x=NULL, y=NULL, color="Avg Exp.", size="Per Exp.")+
 	scale_color_gradient(low="white", high="#440255")+
 	facet_grid(Group ~ ., scales="free_y", space="free_y")+
-	theme(panel.background=element_blank(), 
-	panel.border=element_rect(color="black", fill=NA, linewidth=1), 
-	strip.background=element_blank(), strip.text.y=element_blank(), 
+	theme(panel.background=element_blank(), axis.ticks.x=element_line(linewidth=0.35, color="black"), 
+	axis.line=element_blank(), panel.border=element_rect(color="black", fill=NA, linewidth=0.35), 
+	strip.background=element_blank(), strip.text.y=element_blank(), panel.spacing=unit(2, "pt"), legend.key.size=unit(12, "pt"), 
 	plot.title=element_text(size=title_size, hjust=0.5, color="black"), 
 	legend.box.spacing=unit(0, "pt"), 
 	legend.text=element_text(size=text_size, colour="black"), 
 	legend.title=element_text(size=title_size, colour="black"), 
 	axis.text.y=element_blank(), axis.ticks.y=element_blank(), 
-	axis.text.x=element_text(size=text_size, angle=270, vjust=0.5, hjust=0, color="black"), plot.margin=margin(-10, -3, -10, -3))
+	axis.text.x=element_text(size=text_size*0.9, angle=270, vjust=0.5, hjust=0, color="black"), plot.margin=margin(-10, 1, -10, -3))
 peb <- ggplot(rec_eb, aes(x=Gene, y=Type, size=Pct.exp, color=Avg.exp))+
-	geom_point()+scale_radius(range=c(0, 3))+
+	geom_point()+scale_radius(range=c(0, 2.3))+
 	labs(title="Nanopore", x=NULL, y=NULL, color="Avg Exp.", size="Per Exp.")+
 	scale_color_gradient(low="white", high="#440255")+
 	facet_grid(Group ~ ., scales="free_y", space="free_y")+
-	theme(legend.position="none", panel.background=element_blank(), 
-	panel.border=element_rect(color="black", fill=NA, linewidth=1), 
-	strip.background=element_blank(), strip.clip="off", 
+	theme(legend.position="none", panel.background=element_blank(), axis.ticks.x=element_line(linewidth=0.35, color="black"), 
+	axis.line=element_blank(), panel.border=element_rect(color="black", fill=NA, linewidth=0.35), 
+	strip.background=element_blank(), strip.clip="off", panel.spacing=unit(2, "pt"), legend.key.size=unit(12, "pt"), 
 	strip.text=element_text(size=text_size, colour="black"), 
 	plot.title=element_text(size=title_size, hjust=0.5, color="black"), 
 	axis.text.y=element_blank(), axis.ticks.y=element_blank(), 
-	axis.text.x=element_text(size=text_size, angle=270, vjust=0.5, hjust=0, color="black"), plot.margin=margin(-10, -3, -10, -3))
+	axis.text.x=element_text(size=text_size, angle=270, vjust=0.5, hjust=0, color="black"), plot.margin=margin(-10, -3, -10, 1))
 clsList <- data.frame(Term=types, Info="Line", Group="Non-OSN lineage")
 clsList$Group[match(types_osn, clsList$Term)] <- "OSN lineage"
 clsList$Group <- factor(clsList$Group, levels=c("OSN lineage", "Non-OSN lineage"))
@@ -264,18 +270,20 @@ pec <- ggplot(clsList, aes(y=Term, x="", fill=Term))+geom_tile()+theme_minimal()
 	scale_x_discrete(expand=c(0, 0))+scale_y_discrete(expand=c(0, 0))+
 	theme(panel.background=element_blank(), axis.ticks=element_blank(), strip.clip="off", 
 	strip.text=element_blank(), strip.background=element_blank(), axis.text.x=element_blank(), 
-	axis.text.y=element_text(size=text_size, color="black"), legend.position="none", plot.margin=margin(-10, -3, -10, -3))
+	axis.text.y=element_text(size=text_size*0.9, color="black"), legend.position="none", plot.margin=margin(-10, -3, -10, -3))
 pe <- wrap_elements(wrap_plots(list(pec, pea, peb), nrow=1, widths=c(1, 60, 60))+plot_layout(guides="collect"))+tag_thm
 
 pp <- wrap_elements(ggdraw()+draw_image("fig01_a.png", scale=1.15))+tag_thm
+
+pblank <- wrap_elements(ggplot()+geom_blank()+theme(panel.background=element_blank()))+tag_thm
 ggsave(plot=wrap_plots(list(
 	wrap_elements(pp+plot_annotation(tag_levels=list(c("A")), theme=tag_thm)+tag_thm)+tag_thm, 
 	wrap_elements(wrap_plots(list(pa, pb, pc), nrow=1, widths=c(1, 1, 1.1))+
-	plot_annotation(tag_levels=list(c("B", "C", "E")), theme=tag_thm)+tag_thm)+tag_thm, 
+	plot_annotation(tag_levels=list(c("B", "C", "F")), theme=tag_thm)+tag_thm)+tag_thm, 
 	wrap_elements(pd+plot_annotation(tag_levels=list(c("D")), theme=tag_thm)+tag_thm)+tag_thm, 
-	wrap_elements(pe+plot_annotation(tag_levels=list(c("F")), theme=theme(plot.margin=margin(-10, -3, -10, -3)))+tag_thm)+tag_thm), 
-	ncol=1, heights=c(2.5, 3, 4, 4))+tag_thm, width=13, height=16, dpi=200, filename="oe_fl_fig_01.png", limitsize=F)
-
+	wrap_elements(pe+plot_annotation(tag_levels=list(c("E")), theme=theme(plot.margin=margin(-10, -3, 0, -3)))+tag_thm)+tag_thm, 
+	pblank), ncol=1, heights=c(2.5, 3, 4, 4, 2.8))+tag_thm, 
+	width=210, height=297, dpi=300, units="mm", filename="oe_fl_fig_01.pdf", limitsize=F)
 
 
 

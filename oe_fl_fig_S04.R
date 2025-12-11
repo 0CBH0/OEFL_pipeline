@@ -40,10 +40,13 @@ options(stringsAsFactors=FALSE)
 
 col_list <- c(c("#46998b", "#847acc", "#ef8560", "#6994b3", "#d1934b", "#8fb350", "#de9cba", "#7b469e", 
 	"#9e4747", "#1e8751", "#cc9a04", "#4bb35b", "#e13344", "#855949", "#3b4992", "#6e84b8"), brewer.pal(12,"Set3")[-c(2, 9)])
-text_size <- 13
-title_size <- 15
+text_size <- 8
+title_size <- 9
 choose_font("Arial")
-tag_thm <- theme(plot.tag=element_text(size=title_size, color="black"), plot.margin=margin(0,-5,0,-5), panel.spacing=unit(0, "pt"), 
+tag_thm <- theme(plot.tag=element_text(size=title_size, face="bold", color="black"), plot.margin=margin(0,-5,0,-5), panel.spacing=unit(0, "pt"), 
+	panel.background=element_rect(fill="transparent", color=NA),  plot.background=element_rect(fill="transparent", color=NA), 
+	legend.box.spacing=unit(0, "pt"))
+tag_thm2 <- theme(plot.tag=element_text(size=title_size, face="bold", color="black"), plot.margin=margin(-10,-5,-10,-5), panel.spacing=unit(0, "pt"), 
 	panel.background=element_rect(fill="transparent", color=NA),  plot.background=element_rect(fill="transparent", color=NA), 
 	legend.box.spacing=unit(0, "pt"))
 
@@ -67,16 +70,16 @@ pak <- wrap_elements(ggplot(rec_ak, aes(x=X, y=Y, color=Group))+geom_point(size=
 	labs(title=NULL, x="UMAP1", y="UMAP2", colour=NULL)+
 	scale_color_manual(values=c("red", "gray60"), drop=F)+guides(colour="none")+
 	guides(colour=guide_legend(override.aes=list(size=4)))+
-	annotate("text", x=-4, y=4, label="HBC → mOSN", color="black", size=4, hjust=0, vjust=1)+
-	theme(axis.line=element_blank(), 
-	panel.border=element_rect(color="black", fill=NA, linewidth=0.8), 
+	annotate("text", x=-5, y=4, label="HBC → mOSN", color="black", size=3, hjust=0, vjust=1)+
+	theme(axis.line=element_line(linewidth=0.35, color="black"), axis.ticks=element_line(linewidth=0.35, color="black"), 
+	panel.border=element_rect(color="black", fill=NA, linewidth=0.35), legend.key.size=unit(10, "pt"), 
 	plot.title=element_text(size=title_size, hjust=0.5, colour="black"), 
 	legend.key=element_blank(), legend.background=element_blank(), 
 	legend.title=element_text(size=title_size, colour="black"), 
 	legend.text=element_text(size=text_size, colour="black"), 
 	panel.background=element_rect(fill="transparent", color=NA),  plot.background=element_rect(fill="transparent", color=NA), 
 	axis.text=element_text(size=text_size, colour="black"),  axis.title=element_text(size=title_size, colour="black"), 
-	legend.position=c(0.17, 0.9)))+tag_thm
+	legend.position=c(0.19, 0.9)))+tag_thm
 
 olfr_info_osn <- read.delim("osn_iso_info_all.tsv", h=T)
 olfr_info_osn$Info <- paste(olfr_info_osn$Gene, olfr_info_osn$Symbol, olfr_info_osn$TypeC, olfr_info_osn$TypeE, olfr_info_osn$TSS, 
@@ -96,12 +99,12 @@ pcc <-wrap_elements(ggplot(rec_ccc, aes(x=Var1, y=Freq))+
 	geom_bar(stat="identity", width=0.6, position=position_dodge(0.8), fill=col_list[1])+
 	labs(title=NULL, x="Heterologous isoform", y="Number of OSNs")+
 	scale_y_continuous(limits=c(0, max(rec_ccc$Freq)+20), expand=c(0, 0))+guides(fill="none")+
-	geom_text(aes(x=Var1, y=Freq+2, label=Freq), size=4, vjust=0)+
+	geom_text(aes(x=Var1, y=Freq+2, label=Freq), size=3, vjust=0)+
 	theme(plot.title=element_text(size=title_size, hjust=0.5), 
-	axis.line=element_line(linetype=1, colour='black'), panel.background=element_rect(0, linetype=0), 
+	axis.line=element_line(linewidth=0.35, color="black"), axis.ticks.y=element_line(linewidth=0.35, color="black"), axis.ticks.x=element_blank(), 
+	panel.background=element_rect(0, linetype=0), 
 	legend.title=element_text(size=title_size, colour="black"), 
 	legend.text=element_text(size=text_size, colour="black"), 
-	axis.ticks.x=element_blank(), axis.ticks.y=element_line(colour="black"), 
 	axis.text=element_text(size=text_size, colour="black"), 
 	axis.title=element_text(size=title_size, colour="black"), 
 	legend.key=element_blank(), legend.background=element_blank()))+tag_thm
@@ -109,13 +112,13 @@ pcc <-wrap_elements(ggplot(rec_ccc, aes(x=Var1, y=Freq))+
 rec_aa <- data.frame(table(table(olfr_info$Gene)))
 paa <- wrap_elements(ggplot(rec_aa, aes(x=Var1, y=Freq))+
 	geom_bar(stat="identity", width=0.6, position=position_dodge(0.8), fill=col_list[1])+
-	labs(title=NULL, x="Isoforms of gene", y="Number")+
+	labs(title=NULL, x="Number of OR isoforms", y="Number of OR genes")+
 	scale_y_continuous(limits=c(0, max(rec_aa$Freq)+70), expand=c(0, 0))+guides(fill="none")+
-	geom_text(aes(x=Var1, y=Freq+8, label=Freq), size=4, vjust=0)+
-	theme(axis.line=element_line(linetype=1, colour='black'), panel.background=element_rect(0, linetype=0), 
+	geom_text(aes(x=Var1, y=Freq+8, label=Freq), size=3, vjust=0)+
+	theme(panel.background=element_rect(0, linetype=0), 
+	axis.line=element_line(linewidth=0.35, color="black"), axis.ticks.y=element_line(linewidth=0.35, color="black"), axis.ticks.x=element_blank(), 
 	legend.title=element_text(size=title_size, colour="black"), 
 	legend.text=element_text(size=text_size, colour="black"), 
-	axis.ticks.x=element_blank(), axis.ticks.y=element_line(colour="black"), 
 	axis.text=element_text(size=text_size, colour="black"), 
 	axis.title=element_text(size=title_size, colour="black"), 
 	legend.key=element_blank(), legend.background=element_blank()))+tag_thm
@@ -135,14 +138,14 @@ levels(rec_abb[,1])[1] <- "UTR"
 rec_abb[,1] <- factor(rec_abb[,1], levels=rev(c("UTR", "A3SS", "A5SS", "RI", "SE", "A3SS+A5SS", "A3SS+RI", "A5SS+RI")))
 paba <- ggplot(rec_aba, aes(x=4, y=Freq, fill=Var1))+geom_col()+
 	labs(title="Type of isoforms", x=NULL, y=NULL, fill=NULL)+
-	geom_text(aes(label=Freq), size=4, position=position_stack(vjust=0.5))+
+	geom_text(aes(label=Freq), size=3, position=position_stack(vjust=0.5))+
 	coord_polar(theta="y")+scale_x_continuous(limits=c(2.5, 4.5), expand=c(0, 0)) +
 	scale_fill_manual(values=col_list[c(6,2)])+
-	theme(plot.title=element_text(size=title_size, hjust=-0.5), panel.background=element_blank(), 
+	theme(plot.title=element_text(size=title_size, hjust=-0.5), panel.background=element_blank(), legend.key.size=unit(10, "pt"), 
 	plot.background=element_blank(), axis.line=element_blank(), axis.ticks=element_blank(), 
 	axis.text=element_blank(), axis.title=element_blank(), legend.title=element_text(colour="black", size=title_size), 
 	legend.text=element_text(colour="black", size=text_size), plot.margin=margin(-10,-10,-10,-10), panel.spacing=unit(0, "pt"))
-pa <- wrap_elements(paa+inset_element(paba, 0.35, 0.3, 1, 1)+tag_thm)+tag_thm
+pa <- paa+inset_element(paba, 0.4, 0.3, 1, 1)+tag_thm
 
 rec_sub <- rec[which(rec$TSS == "-"),]
 res_mat <- data.frame(matrix(FALSE, nrow=nrow(rec_sub), ncol=4, dimnames=list(rec_sub$ID, c("A3SS", "A5SS", "RI", "SE"))))
@@ -152,40 +155,54 @@ res_mat$RI[grep("RI", rec_sub$TypeC)] <- TRUE
 res_mat$SE[grep("SE", rec_sub$TypeC)] <- TRUE
 res_mat <- res_mat[which(rec_sub$TypeC != "-"),]
 pac <- upset(res_mat, colnames(res_mat), name="Overlap", width_ratio=0.25, wrap=T, stripes="white", 
+	matrix=(intersection_matrix(geom=geom_point(size=1.5))), 
 	base_annotations=list("Intersection size"=intersection_size(fill=col_list[2], color=col_list[2], 
-	text=list(size=4))+scale_y_continuous(expand=c(0, 0))), 
+	text=list(size=3))+scale_y_continuous(expand=c(0, 0))), 
 	set_sizes=(upset_set_size()+scale_y_reverse(breaks=c(0, 40), expand=c(0, 0))+theme(panel.background=element_blank(), 
 	panel.grid=element_blank(), panel.border=element_blank(), panel.grid.major=element_blank(), 
 	axis.title=element_text(size=title_size, color="black"), axis.text.x=element_text(size=text_size, color="black"), 
-	axis.text.y=element_blank(), axis.ticks.x=element_line(color="black"), axis.line.x=element_line(color="black"), 
+	axis.text.y=element_blank(), axis.ticks.x=element_line(linewidth=0.35, color="black"), axis.line.x=element_line(linewidth=0.35, color="black"), 
 	plot.margin=margin(-5,-5,-5,-5), panel.spacing=unit(0, "pt"))), 
 	#queries=list(upset_query(set="A3SS", fill=info_col["A3SS"], color=info_col["A3SS"]), 
 	#upset_query(set="A5SS", fill=info_col["A5SS"], color=info_col["A5SS"]), 
 	#upset_query(set="RI", fill=info_col["RI"], color=info_col["RI"]), 
 	#upset_query(set="SE", fill=info_col["SE"], color=info_col["SE"])), 
 	sort_sets="descending", sort_intersections="descending", sort_intersections_by=c("cardinality"), 
-	themes=upset_modify_themes(list(intersections_matrix=list(theme_minimal(),theme(panel.background=element_blank(), 
+	themes=upset_modify_themes(list(intersections_matrix=list(theme_minimal(), theme(panel.background=element_blank(), 
 	panel.grid=element_blank(), panel.border=element_blank(), panel.grid.major=element_blank(), 
 	axis.title.x=element_text(size=title_size, color="black"), axis.title.y=element_blank(), axis.text.x=element_blank(), 
 	axis.text.y=element_text(size=text_size, color="black"), plot.margin=margin(-5,-5,-5,-5), panel.spacing=unit(0, "pt"))), 
 	"Intersection size"=list(theme_minimal(),theme(panel.background=element_blank(), 
 	panel.grid=element_blank(), panel.border=element_blank(), panel.grid.major=element_blank(), 
 	plot.margin=margin(-5,-5,-5,-5), panel.spacing=unit(0, "pt"), axis.text=element_text(size=text_size, color="black"), 
-	axis.title=element_blank(), axis.text.x=element_blank(), axis.line.y=element_line(color="black"), 
-	axis.ticks.y=element_line(color="black"))))))+tag_thm
-pad <- wrap_elements(wrap_plots(list(pac, wrap_elements(ggdraw()+draw_image("figS04_b.png", scale=1)+tag_thm))))+tag_thm
+	axis.title=element_blank(), axis.text.x=element_blank(), axis.line.y=element_line(linewidth=0.35, color="black"), 
+	axis.ticks.y=element_line(linewidth=0.35, color="black"))))))+tag_thm
+#pad <- wrap_elements(wrap_plots(list(pac, wrap_elements(ggdraw()+
+#	draw_image("figS04_b.png", scale=1)+theme(plot.margin=margin(-5,-5,-5,-20))))))+tag_thm
+pad <- wrap_elements(ggdraw()+draw_image("figS04_b.png", scale=1))+
+	theme(panel.border=element_rect(color="black", fill=NA, linewidth=0.4))+tag_thm
 pae <- wrap_elements(ggdraw()+draw_image("figS04_c.png", scale=1))+
-	theme(panel.border=element_rect(color="black", fill=NA, linewidth=0.8))+tag_thm
+	theme(panel.border=element_rect(color="black", fill=NA, linewidth=0.4))+tag_thm
 paf <- wrap_elements(ggdraw()+draw_image("figS04_d.png", scale=1))+
-	theme(panel.border=element_rect(color="black", fill=NA, linewidth=0.8))+tag_thm
+	theme(panel.border=element_rect(color="black", fill=NA, linewidth=0.4))+tag_thm
 
+tag_thm2 <- theme(plot.tag=element_text(size=title_size, face="bold", color="black"), plot.margin=margin(-32,-5,-10,-5), panel.spacing=unit(0, "pt"), 
+	panel.background=element_rect(fill="transparent", color=NA),  plot.background=element_rect(fill="transparent", color=NA), 
+	legend.box.spacing=unit(0, "pt"))
+pad <- wrap_elements(ggdraw()+draw_image("figS04_b.png", scale=1)+tag_thm2)+
+	theme(panel.border=element_rect(color="black", fill=NA, linewidth=0.4))+tag_thm2
 pblank <- wrap_elements(ggplot()+geom_blank()+theme(panel.background=element_blank()))+tag_thm
 ggsave(plot=wrap_plots(list(
-	wrap_elements(wrap_plots(list(pa, pad, pak), nrow=1, widths=c(0.8, 1.5, 0.8))+
-	plot_annotation(tag_levels=list(c("A", "B", "C")), theme=tag_thm))+tag_thm, 
+	wrap_elements(wrap_plots(list(pa, pac, pad, pak), nrow=1, widths=c(0.8, 1, 0.5, 0.8))+
+	plot_annotation(tag_levels=list(c("A", "", "B", "", "D")), theme=tag_thm))+tag_thm, 
 	wrap_elements(wrap_plots(list(pae, paf), nrow=1, widths=c(1, 1))+
-	plot_annotation(tag_levels=list(c("D", "E")), theme=tag_thm))+tag_thm), 
-	ncol=1, heights=c(1, 1)), width=13, height=8, dpi=200, filename="oe_fl_fig_S04.png", limitsize=F)
+	plot_annotation(tag_levels=list(c("C", "E")), theme=tag_thm))+tag_thm, 
+	pblank), ncol=1, heights=c(1, 1, 2.6)), 
+	width=210, height=297, dpi=300, units="mm", filename="oe_fl_fig_S04.pdf", limitsize=F)
+
+
+
+
 
 
 

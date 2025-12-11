@@ -19,10 +19,10 @@ options(stringsAsFactors=FALSE)
 
 col_list <- c(c("#46998b", "#847acc", "#ef8560", "#6994b3", "#d1934b", "#8fb350", "#de9cba", "#7b469e", 
 	"#9e4747", "#1e8751", "#cc9a04", "#4bb35b", "#e13344", "#855949", "#3b4992", "#6e84b8"), brewer.pal(12,"Set3")[-c(2, 9)])
-text_size <- 13
-title_size <- 15
+text_size <- 8
+title_size <- 9
 choose_font("Arial")
-tag_thm <- theme(plot.tag=element_text(size=title_size, colour="black"), plot.margin=margin(-3,-3,-3,-3), panel.spacing=unit(0, "pt"), 
+tag_thm <- theme(plot.tag=element_text(size=title_size, face="bold", colour="black"), plot.margin=margin(-3,-3,-3,-3), panel.spacing=unit(0, "pt"), 
 	panel.background=element_rect(fill="transparent", colour=NA),  plot.background=element_rect(fill="transparent", colour=NA), 
 	legend.box.spacing=unit(0, "pt"))
 
@@ -52,19 +52,22 @@ sce_nano$cell.subtype_fix <- factor(sce_nano$cell.subtype_fix, levels=types)
 cs_info <- data.frame(sce_rna@meta.data)
 pa <- wrap_elements(ggplot(cs_info, aes(x="Term", y=nFeature_RNA))+geom_violin(fill=col_list[1], color=col_list[1])+
 	geom_boxplot(fill="white", outlier.alpha=0, width=0.2)+
-	labs(title=NULL, x="Genes", y=NULL)+scale_x_discrete(breaks=NULL)+
+	labs(title=NULL, x="# of Genes", y=NULL)+scale_x_discrete(breaks=NULL)+
 	theme(axis.text=element_text(size=text_size, colour="black"), axis.title=element_text(size=title_size, colour="black"), 
-	axis.line=element_line(colour="black"), panel.background=element_blank()))+tag_thm
+	axis.line=element_line(linewidth=0.35, color="black"), axis.ticks=element_line(linewidth=0.35, color="black"), 
+	panel.background=element_blank()))+tag_thm
 pb <- wrap_elements(ggplot(cs_info, aes(x="Term", y=nCount_RNA))+geom_violin(fill=col_list[1], color=col_list[1])+
 	geom_boxplot(fill="white", outlier.alpha=0, width=0.2)+
-	labs(title=NULL, x="Counts", y=NULL)+scale_x_discrete(breaks=NULL)+
+	labs(title=NULL, x="# of Counts", y=NULL)+scale_x_discrete(breaks=NULL)+
 	theme(axis.text=element_text(size=text_size, colour="black"), axis.title=element_text(size=title_size, colour="black"), 
-	axis.line=element_line(colour="black"), panel.background=element_blank()))+tag_thm
+	axis.line=element_line(linewidth=0.35, color="black"), axis.ticks=element_line(linewidth=0.35, color="black"), 
+	panel.background=element_blank()))+tag_thm
 pc <- wrap_elements(ggplot(cs_info, aes(x="Term", y=cell.mt))+geom_violin(fill=col_list[1], color=col_list[1])+
 	geom_boxplot(fill="white", outlier.alpha=0, width=0.2)+
-	labs(title=NULL, x="Mito. (%)", y=NULL)+scale_x_discrete(breaks=NULL)+
+	labs(title=NULL, x="% of mitochondria", y=NULL)+scale_x_discrete(breaks=NULL)+
 	theme(axis.text=element_text(size=text_size, colour="black"), axis.title=element_text(size=title_size, colour="black"), 
-	axis.line=element_line(colour="black"), panel.background=element_blank()))+tag_thm
+	axis.line=element_line(linewidth=0.35, color="black"), axis.ticks=element_line(linewidth=0.35, color="black"), 
+	panel.background=element_blank()))+tag_thm
 
 res_info <- read.delim("ass_type_info.tsv", h=T)
 res_info$sample <- "ONT_OE"
@@ -74,11 +77,11 @@ res_info$rate <- res_info$count*100/sum(res_info$count)
 res_info$type <- factor(res_info$type, levels=rev(res_info$type), labels=rev(c("FSM", "ISM3'", "ISM5'", "ISM\ninternal", "Mono\nexonic")))
 pd <- wrap_elements(ggplot(res_info, aes(x=type, y=rate))+
 	geom_bar(stat="identity", position=position_dodge(0.8), fill=col_list[4])+
-	labs(title=NULL, x=NULL, y="Reads percentage", fill="Type")+
+	labs(title=NULL, x=NULL, y="Percentage of reads (%)", fill="Type")+
 	#scale_fill_manual(values=rev(c("#db5f56", "#8ddd3e", "#fdb54e", "#7dcac1", "#5684da")), guide=guide_legend(reverse=T), drop=F)+
 	scale_y_continuous(expand=c(0, 0))+
-	theme(legend.position="none", axis.line=element_line(linetype=1, colour='black'), panel.background=element_rect(0, linetype=0), 
-	axis.ticks.x=element_blank(), axis.ticks.y=element_line(colour="black"), 
+	theme(legend.position="none", panel.background=element_rect(0, linetype=0), 
+	axis.line=element_line(linewidth=0.35, color="black"), axis.ticks.y=element_line(linewidth=0.35, color="black"), axis.ticks.x=element_blank(), 
 	axis.text.y=element_text(size=text_size, colour="black"), 
 	axis.text.x=element_text(size=text_size, colour="black"), 
 	axis.title=element_text(size=title_size, colour="black"), 
@@ -105,20 +108,23 @@ terms <- read.csv("sce_nano_len_sub.csv", r=1)[, 1]
 cell_info <- read.csv("sce_nano_info.csv", r=1, h=T)
 pe <- wrap_elements(ggplot(, aes(x=terms, fill=type, color=type))+geom_density(fill=col_list[2], color=col_list[2], alpha=0.7, linewidth=1)+
 	scale_y_continuous(expand=c(0, 0))+scale_x_continuous(breaks=seq(0, 3000, 500), limits=c(0, 2000), expand=c(0, 0))+
-	labs(title=NULL, x="Length of tagged reads", y="Density\n")+
+	labs(title=NULL, x="Length of reads (bp)", y="Density\n")+
 	theme(plot.title=element_text(size=title_size, hjust=0.5), panel.background=element_blank(), 
+	axis.line=element_line(linewidth=0.35, color="black"), axis.ticks=element_line(linewidth=0.35, color="black"), 
 	axis.text.y=element_blank(), axis.ticks.y=element_blank(), axis.title=element_text(size=title_size, colour="black"), 
-	axis.text.x=element_text(size=text_size, colour="black"), axis.line=element_line(colour="black")))+tag_thm
+	axis.text.x=element_text(size=text_size, colour="black")))+tag_thm
 pf <- wrap_elements(ggplot(cell_info, aes(x="Term", y=Len))+geom_violin(fill=col_list[2], color=col_list[2])+
 	geom_boxplot(fill="white", outlier.alpha=0, width=0.2)+
-	labs(title=NULL, x="Length (mean)", y=NULL)+scale_x_discrete(breaks=NULL)+
+	labs(title=NULL, x="Length of reads \nper cell (mean)", y=NULL)+scale_x_discrete(breaks=NULL)+
 	theme(axis.text=element_text(size=text_size, colour="black"), axis.title=element_text(size=title_size, colour="black"), 
-	axis.line=element_line(colour="black"), panel.background=element_blank()))+tag_thm
+	axis.line=element_line(linewidth=0.35, color="black"), axis.ticks=element_line(linewidth=0.35, color="black"), 
+	panel.background=element_blank()))+tag_thm
 pg <- wrap_elements(ggplot(cell_info, aes(x="Term", y=Isoform))+geom_violin(fill=col_list[2], color=col_list[2])+
 	geom_boxplot(fill="white", outlier.alpha=0, width=0.2)+
-	labs(title=NULL, x="Isoforms", y=NULL)+scale_x_discrete(breaks=NULL)+
+	labs(title=NULL, x="# of isoforms", y=NULL)+scale_x_discrete(breaks=NULL)+
 	theme(axis.text=element_text(size=text_size, colour="black"), axis.title=element_text(size=title_size, colour="black"), 
-	axis.line=element_line(colour="black"), panel.background=element_blank()))+tag_thm
+	axis.line=element_line(linewidth=0.35, color="black"), axis.ticks=element_line(linewidth=0.35, color="black"), 
+	panel.background=element_blank()))+tag_thm
 
 data_raw <- H5File$new("/mnt/md0/oe_full_length/output/OEfulllength/osn_trans_ass.h5", mode="r")
 sct <- list()
@@ -152,25 +158,50 @@ osn_sct_raw[["features"]] <- sct[["features"]]
 osn_sct_raw[["features"]]$ID <- sct[["features"]]$Name
 
 rs <- rowSums(osn_sct_raw[["trans"]] > 0)
-res_ph <- data.frame(table(osn_sct_raw[["features"]]$Gene[intersect(which(rs > 2), which(osn_sct_raw[["features"]]$Type == "protein_coding"))]))
-res_ph <- data.frame(table(res_ph$Freq))
-res_ph$Rate <- res_ph$Freq * 100 / sum(res_ph$Freq)
-ph <- wrap_elements(ggplot(res_ph, aes(x=Var1, y=Rate))+
+res_pha <- data.frame(table(osn_sct_raw[["features"]]$Gene))
+res_pha <- data.frame(table(res_pha$Freq))
+res_pha <- rbind(res_pha[1:9,], data.frame(Var1=10, Freq=sum(res_pha$Freq[10:nrow(res_pha)])))
+res_pha$Rate <- res_pha$Freq * 100 / sum(res_pha$Freq)
+pha <- wrap_elements(ggplot(res_pha, aes(x=Var1, y=Rate))+
 	geom_bar(stat="identity", position=position_dodge(0.8), fill=col_list[4])+
-	labs(title=NULL, x="# isoforms", y="Percentage of genes (%)")+
-	scale_y_continuous(limits=c(0, 85), expand=c(0, 0))+
-	geom_text(aes(x=Var1, y=Rate+2, label=Freq), size=4, vjust=0)+guides(fill="none")+
-	theme(legend.position="none", axis.line=element_line(linetype=1, colour='black'), panel.background=element_rect(0, linetype=0), 
-	axis.ticks.x=element_blank(), axis.ticks.y=element_line(colour="black"), 
+	labs(title=NULL, x="# of isoforms", y="% of genes")+
+	scale_y_continuous(limits=c(0, 55), expand=c(0, 0))+
+	scale_x_discrete(labels=c(1:9, "10+"))+guides(fill="none")+
+	geom_text(aes(x=Var1, y=Rate+1, label=Freq), size=2, vjust=0)+
+	theme(legend.position="none", panel.background=element_rect(0, linetype=0), 
+	axis.line=element_line(linewidth=0.35, color="black"), axis.ticks.y=element_line(linewidth=0.35, color="black"), axis.ticks.x=element_blank(), 
 	axis.text.y=element_text(size=text_size, colour="black"), 
 	axis.text.x=element_text(size=text_size, colour="black"), 
 	axis.title=element_text(size=title_size, colour="black"), 
 	legend.title=element_text(size=title_size, colour="black", face="bold"), 
 	legend.text=element_text(size=text_size, colour="black"), 
 	legend.key.size=unit(20, "pt"), legend.box.spacing = unit(2, "pt"), 
-	legend.key=element_blank(), legend.background=element_blank()))+tag_thm
+	legend.key=element_blank(), legend.background=element_blank())+tag_thm)+tag_thm
+rs <- rowSums(osn_sct_raw[["trans"]] > 0)
+res_ph <- data.frame(table(osn_sct_raw[["features"]]$Gene[intersect(which(rs > 0), which(osn_sct_raw[["features"]]$Type == "protein_coding"))]))
+res_ph <- data.frame(table(res_ph$Freq))
+res_ph$Rate <- res_ph$Freq * 100 / sum(res_ph$Freq)
+phb <- wrap_elements(ggplot(res_ph, aes(x=Var1, y=Rate))+
+	geom_bar(stat="identity", position=position_dodge(0.8), fill=col_list[4])+
+	labs(title=NULL, x="# of isoforms\n(protein coding)", y="% of genes")+
+	scale_y_continuous(limits=c(0, 90), expand=c(0, 0))+
+	geom_text(aes(x=Var1, y=Rate+2, label=Freq), size=2, vjust=0)+guides(fill="none")+
+	theme(plot.title=element_text(size=title_size, hjust=0.5), legend.position="none", 
+	axis.line=element_line(linewidth=0.35, color="black"), axis.ticks.y=element_line(linewidth=0.35, color="black"), 
+	panel.background=element_rect(0, linetype=0), axis.ticks.x=element_blank(), 
+	axis.text.y=element_text(size=text_size, colour="black"), 
+	axis.text.x=element_text(size=text_size, colour="black"), 
+	axis.title=element_text(size=title_size, colour="black"), 
+	legend.title=element_text(size=title_size, colour="black", face="bold"), 
+	legend.text=element_text(size=text_size, colour="black"), 
+	legend.key.size=unit(20, "pt"), legend.box.spacing = unit(2, "pt"), 
+	legend.key=element_blank(), legend.background=element_blank())+tag_thm)+tag_thm
+ph <- wrap_elements(pha+inset_element(phb, 0.29, 0.27, 1, 1)+tag_thm)+tag_thm
 
-ggsave(plot=wrap_plots(A=pa, B=pb, C=pc, D=pd, E=pe, F=pf, G=pg, H=ph, design="ABCD\nEFGH", widths=c(2,2,2,3.5))+
-	plot_annotation(tag_levels=list(c("A", "B", "C", "D", "E", "F", "G", "H")))+tag_thm, 
-	width=13, height=8, dpi=200, filename="oe_fl_fig_S01.png", limitsize=F)
+pblank <- wrap_elements(ggplot()+geom_blank()+theme(panel.background=element_blank()))+tag_thm
+ggsave(plot=wrap_plots(list(
+	wrap_elements(wrap_plots(A=pa, B=pb, C=pc, D=pd, E=pe, F=pf, G=pg, H=ph, design="ABCD\nEFGH", widths=c(2,2,2,3.5))+
+	plot_annotation(tag_levels=list(c("A", "B", "C", "D", "E", "F", "G", "H"))))+tag_thm, 
+	pblank), ncol=1, heights=c(1,1.3)), 
+	width=210, height=297, dpi=300, units="mm", filename="oe_fl_fig_S01.pdf", limitsize=F)
 

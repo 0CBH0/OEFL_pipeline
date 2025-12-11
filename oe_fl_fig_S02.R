@@ -38,10 +38,10 @@ options(stringsAsFactors=FALSE)
 
 col_list <- c(c("#46998b", "#847acc", "#ef8560", "#6994b3", "#d1934b", "#8fb350", "#de9cba", "#7b469e", 
 	"#9e4747", "#1e8751", "#cc9a04", "#4bb35b", "#e13344", "#855949", "#3b4992", "#6e84b8"), brewer.pal(12,"Set3")[-c(2, 9)])
-text_size <- 13
-title_size <- 15
+text_size <- 8
+title_size <- 9
 choose_font("Arial")
-tag_thm <- theme(plot.tag=element_text(size=title_size, colour="black"), plot.margin=margin(-3,0,3,0), panel.spacing=unit(0, "pt"), 
+tag_thm <- theme(plot.tag=element_text(size=title_size, face="bold", colour="black"), plot.margin=margin(-3,0,3,0), panel.spacing=unit(0, "pt"), 
 	panel.background=element_rect(fill="transparent", colour=NA),  plot.background=element_rect(fill="transparent", colour=NA), 
 	legend.box.spacing=unit(0, "pt"))
 
@@ -121,59 +121,6 @@ scg[["features"]]$Count <- rowSums(scg[["matrix"]])
 scg[["features"]]$Symbol <- gtf$gene_name[match(scg[["features"]]$Gene, gtf$gene_id)]
 data_raw$close_all()
 
-reads_info <- read.delim("/mnt/md0/oe_full_length/output/OEfulllength/osn_gene_len.tsv", h=T)
-reads_info$type <- factor(reads_info$type, levels=types)
-reads_info_aa <- reads_info[which(reads_info$len > 10),]
-r = summary(aov(len~type, data=reads_info_aa))
-paa <- ggplot(reads_info_aa, aes(x=body, color=type)) + stat_ecdf(linewidth=0.8)+
-	labs(title=NULL, x="Length of CDS", y="ECDF", color=NULL)+
-	scale_color_manual(values=brewer.pal(9,"YlGnBu")[c(5,6,7,8,9)])+
-	scale_x_continuous(limits=c(0, 3000), expand=c(0, 0))+
-	#annotate("text", x=100, y=1, label=paste0("F=", round(r[[1]][["F value"]][1], 2), "\nPval=", round(r[[1]][["Pr(>F)"]][1], 2)), 
-	#color="black", size=4, hjust=0, vjust=1)+
-	theme(plot.title=element_text(size=title_size, hjust=0.5), legend.background=element_blank(), 
-	axis.text=element_text(size=text_size, colour="black"), axis.title=element_text(size=title_size, colour="black"), 
-	axis.line=element_line(colour="black"), legend.position = c(0.82, 0.23))+tag_thm
-
-reads_info <- read.delim("/mnt/md0/oe_full_length/output/OEfulllength/osn_gene_len.tsv", h=T)
-reads_info$type <- factor(reads_info$type, levels=types)
-reads_info_ab <- reads_info[which(reads_info$utr5 > 10 & reads_info$body > 10),]
-r = summary(aov(len~type, data=reads_info_ab))
-pab <- ggplot(reads_info_ab, aes(x=utr5, color=type)) + stat_ecdf(linewidth=0.8)+
-	labs(title=NULL, x="Length of 5'UTRs", y="ECDF", color=NULL)+
-	scale_x_continuous(limits=c(0, 1500), expand=c(0, 0))+
-	scale_color_manual(values=brewer.pal(9,"YlGnBu")[c(5,6,7,8,9)])+
-	#annotate("text", x=50, y=1, label=paste0("F=", round(r[[1]][["F value"]][1], 2), "\nPval=", round(r[[1]][["Pr(>F)"]][1], 2)), 
-	#color="black", size=4, hjust=0, vjust=1)+
-	theme(plot.title=element_text(size=title_size, hjust=0.5), legend.background=element_blank(), 
-	axis.text=element_text(size=text_size, colour="black"), axis.title=element_text(size=title_size, colour="black"), 
-	axis.line=element_line(colour="black"), legend.position = c(0.82, 0.23))+tag_thm
-
-sce_trans <- CreateSeuratObject(scg[["matrix"]], project="OEnano")
-sce_trans$cell.subtype_fix <- as.character(osn_rna$cell.subtype_fix[match(colnames(sce_trans), colnames(osn_rna))])
-sce_trans <- SCTransform(sce_trans, method="glmGamPoi")
-reads_info <- read.delim("/mnt/md0/oe_full_length/output/OEfulllength/osn_gene_len.tsv", h=T)
-reads_info$type <- factor(reads_info$type, levels=types)
-rec <- data.frame()
-for (type in types[-4])
-{
-	terms <- FindMarkers(sce_trans, ident.1=type, group.by="cell.subtype_fix")
-	terms <- rownames(terms)[which(terms$p_val_adj < 0.01 & terms$avg_log2FC > 2)]
-	rec <- rbind(rec, reads_info[match(paste0(type, ",", terms), paste0(reads_info$type, ",", gsub("_", "-", reads_info$trans))),])
-}
-rec_ac <- rec[which(rec$utr5 > 10 & rec$body > 10 & rec$utr5 < 2000),]
-rec_ac$type <- factor(rec_ac$type, levels=types[-4], labels=c(types[1:3], "OSN"))
-r = summary(aov(utr5~type, data=rec_ac))
-pac <- ggplot(rec_ac, aes(x=type, y=utr5, fill=type, color=type))+geom_violin()+
-	geom_boxplot(width=0.2, outlier.alpha=0, fill="white")+scale_y_continuous()+
-	scale_x_discrete(drop=F)+scale_fill_manual(values=brewer.pal(9,"YlGnBu")[c(5,6,7,9)], drop=F)+
-	scale_color_manual(values=brewer.pal(9,"YlGnBu")[c(5,6,7,9)], drop=F)+
-	#annotate("text", x=0.5, y=900, label=paste0("F=", round(r[[1]][["F value"]][1], 2), "\nPval=", round(r[[1]][["Pr(>F)"]][1], 2)), 
-	#color="black", size=4, hjust=0, vjust=1)+
-	labs(title=NULL, x="5'UTR length of\nmarker isoforms", y="Length of 5'UTR")+
-	theme(axis.title=element_text(size=title_size, colour="black"), axis.text=element_text(size=text_size, colour="black"), 
-	axis.line=element_line(colour="black"), legend.position="none")+tag_thm
-
 sce_trans <- CreateSeuratObject(osn_sct[["genes"]], project="OEnano")
 sce_trans$cell.subtype_fix <- as.character(osn_rna$cell.subtype_fix[match(colnames(sce_trans), colnames(osn_rna))])
 sce_trans <- SCTransform(sce_trans, method="glmGamPoi", variable.features.n=nrow(sce_trans))
@@ -238,57 +185,192 @@ rec$FC.e <- group_df$avg_log2FC[match(rec$Gene, rownames(group_df))]
 rec$Padj <- p.adjust(rec$Pval, method="BH")
 rec <- rec[order(rec$FC, decreasing=T),]
 rec <- rec[order(rec$Padj),]
-
 deg_info <- rec
 deg_info$Group <- "N.S."
 deg_info$Group[which(deg_info$Padj < 0.05 & deg_info$Diff > 30)] <- "Increased"
-deg_info$Group[which(deg_info$Padj < 0.05 & deg_info$Diff < -30)] <- "Decreased"
+deg_info$Group[which(deg_info$Padj < 0.05 & deg_info$Diff < -30)] <- ""
 #deg_info$X <- log2(abs(deg_info$Diff))*deg_info$Diff/abs(deg_info$Diff)
 deg_info$X <- deg_info$Diff
 deg_info$Y <- -log10(deg_info$Padj)
+deg_info$Y[which(deg_info$Y > 10)] <- 10
 deg_info$Rank <- abs(deg_info$X)
 deg_info <- deg_info[order(deg_info$Rank, decreasing=T),]
 deg_info$Anno <- ""
-#deg_info$Anno[which(deg_info$Symbol == "Calm1")] <- "Calm1"
-#deg_info$Anno <- deg_info$Symbol
-#deg_info$Anno[which(deg_info$Group == "N.S.")] <- ""
-#deg_info$Anno[which(deg_info$Anno != "")[-c(1:10)]] <- ""
-deg_info$Group <- factor(deg_info$Group, levels=c("Increased", "Decreased", "N.S."))
+deg_info$Anno[which(deg_info$Symbol == "Scg2")] <- "Scg2"
+deg_info$Group <- factor(deg_info$Group, levels=c("Increased", "", "N.S."))
 deg_info <- deg_info[which(abs(deg_info$Diff) > 10),]
-pad <- ggplot(deg_info, aes(x=X, y=Y, color=Group))+geom_point(size=2)+
-	labs(title=NULL, x="Difference of 5'UTR length", y="P.adj (-log10)", color=NULL)+
-	scale_color_manual(values=c("#FC8D62", "#8DA0CB", "gray80"), drop=F)+scale_y_continuous(expand=c(0, 0))+
-	#scale_x_continuous(breaks=seq(-90, 100, 30))+
+pba <- ggplot(deg_info, aes(x=X, y=Y, color=Group))+geom_point(size=2)+
+	labs(title=NULL, x="Difference of 5'UTR length (bp)", y="P.adj (-log10)", color=NULL)+
+	scale_color_manual(values=c("#FC8D62", "#8DA0CB", "gray80"), drop=F)+
 	guides(colour=guide_legend(override.aes=list(size=4)))+
-	#geom_text(aes(y=Y+1, label=Anno), size=3, col="black", vjust=0)+
-	geom_text_repel(data=deg_info[which(deg_info$Anno != ""),,drop=F], aes(label=Anno), color="black", size=4, 
+	scale_x_continuous(breaks=c(-100, -30, 0, 30, 100), labels=c("-100", "-30     ", "0", "    30", "100"))+
+	scale_y_continuous(limits=c(0, 11), breaks=c(1.3, seq(0, 10, 2.5)), labels=c("1.3", "0.0", "2.5", "5.0", "7.5", "≥\n10.0"), expand=c(0, 0))+
+	geom_text_repel(data=deg_info[which(deg_info$Anno != ""),,drop=F], aes(label=Anno), color="black", size=3, 
 	segment.size=0.5, direction="y", , nudge_y=2, nudge_x=0.05, hjust=0)+
 	geom_hline(yintercept=-log10(0.05), colour="gray30", linetype="dashed", linewidth=0.5)+
 	geom_vline(xintercept=c(-30, 30), colour="gray30", linetype="dashed", linewidth=0.5)+
-	theme(plot.title=element_text(size=title_size, hjust=0.5, colour="black"), panel.background=element_blank(), 
+	theme(plot.title=element_text(size=title_size, hjust=0.5, colour="black"), panel.background=element_blank(), legend.key.size=unit(12, "pt"), 
+	#legend.box.background=element_rect(linewidth=0.35, color="black"),
 	legend.title=element_text(size=title_size, colour="black"), legend.text=element_text(size=text_size, colour="black"), 
 	axis.text=element_text(size=text_size, colour="black"), axis.title=element_text(size=title_size, colour="black"), 
-	axis.line=element_line(colour="black"))+tag_thm
+	axis.line=element_line(linewidth=0.35, color="black"), axis.ticks=element_line(linewidth=0.35, color="black"), 
+	legend.position=c(0.28, 0.83))+tag_thm
+
+reads_info <- read.delim("/mnt/md0/oe_full_length/output/OEfulllength/osn_gene_len.tsv", h=T)
+reads_info$type <- factor(reads_info$type, levels=types)
+reads_info$len2 <- reads_info$utr3 + reads_info$utr5 + reads_info$body
+reads_info <- reads_info[which(reads_info$utr3 > 10 & reads_info$utr5 > 10 & reads_info$body > 10),]
+pbb <- ggplot(reads_info, aes(x=len2, color=type)) + stat_ecdf(linewidth=0.5)+
+	labs(title=NULL, x="Length of isoforms", y="ECDF", color=NULL)+
+	scale_color_manual(values=brewer.pal(9,"YlGnBu")[c(5,6,7,8,9)])+
+	scale_x_continuous(limits=c(0, 2500), breaks=c(0, 500, 1500, 2500), expand=c(0, 0))+
+	#annotate("text", x=100, y=1, label=paste0("F=", round(r[[1]][["F value"]][1], 2), "\nPval=", round(r[[1]][["Pr(>F)"]][1], 2)), 
+	#color="black", size=4, hjust=0, vjust=1)+
+	theme(plot.title=element_text(size=title_size, hjust=0.5), panel.background=element_blank(), legend.key.size=unit(12, "pt"), 
+	legend.title=element_text(size=title_size, colour="black"), 
+	legend.text=element_text(size=text_size, colour="black"), 
+	legend.key=element_blank(), legend.background=element_blank(), 
+	axis.text=element_text(size=text_size, colour="black"), axis.title=element_text(size=title_size, colour="black"), 
+	axis.line=element_line(linewidth=0.35, color="black"), axis.ticks=element_line(linewidth=0.35, color="black"), 
+	legend.position="none")+tag_thm
+pbc <- ggplot(reads_info, aes(x=utr3, color=type)) + stat_ecdf(linewidth=0.5)+
+	labs(title=NULL, x="Length of 3'UTRs", y=NULL, color=NULL)+
+	scale_x_continuous(limits=c(0, 1500), expand=c(0, 0))+
+	scale_color_manual(values=brewer.pal(9,"YlGnBu")[c(5,6,7,8,9)])+
+	#annotate("text", x=50, y=1, label=paste0("F=", round(r[[1]][["F value"]][1], 2), "\nPval=", round(r[[1]][["Pr(>F)"]][1], 2)), 
+	#color="black", size=4, hjust=0, vjust=1)+
+	theme(plot.title=element_text(size=title_size, hjust=0.5), legend.key.size=unit(12, "pt"), 
+	legend.title=element_text(size=title_size, colour="black"), 
+	legend.text=element_text(size=text_size, colour="black"), 
+	legend.key=element_blank(), legend.background=element_blank(), 
+	axis.text=element_text(size=text_size, colour="black"), axis.title=element_text(size=title_size, colour="black"), 
+	axis.line=element_line(linewidth=0.35, color="black"), axis.ticks=element_line(linewidth=0.35, color="black"), 
+	legend.position="none")+tag_thm
+pbd <- ggplot(reads_info, aes(x=body, color=type)) + stat_ecdf(linewidth=0.5)+
+	labs(title=NULL, x="Length of CDS", y=NULL, color=NULL)+
+	scale_color_manual(values=brewer.pal(9,"YlGnBu")[c(5,6,7,8,9)])+
+	scale_x_continuous(limits=c(0, 1500), breaks=c(0, 800, 1500), expand=c(0, 0))+
+	#annotate("text", x=100, y=1, label=paste0("F=", round(r[[1]][["F value"]][1], 2), "\nPval=", round(r[[1]][["Pr(>F)"]][1], 2)), 
+	#color="black", size=4, hjust=0, vjust=1)+
+	theme(plot.title=element_text(size=title_size, hjust=0.5), legend.key.size=unit(12, "pt"), 
+	legend.title=element_text(size=title_size, colour="black"), 
+	legend.text=element_text(size=text_size, colour="black"), 
+	legend.key=element_blank(), legend.background=element_blank(), 
+	axis.text=element_text(size=text_size, colour="black"), axis.title=element_text(size=title_size, colour="black"), 
+	axis.line=element_line(linewidth=0.35, color="black"), axis.ticks=element_line(linewidth=0.35, color="black"), 
+	legend.position="none")+tag_thm
+pbe <- ggplot(reads_info, aes(x=utr5, color=type)) + stat_ecdf(linewidth=0.5)+
+	labs(title=NULL, x="Length of 5'UTRs", y=NULL, color=NULL)+
+	scale_x_continuous(limits=c(0, 1000), breaks=c(0, 400, 800), expand=c(0, 0))+
+	scale_color_manual(values=brewer.pal(9,"YlGnBu")[c(5,6,7,8,9)])+
+	#annotate("text", x=50, y=1, label=paste0("F=", round(r[[1]][["F value"]][1], 2), "\nPval=", round(r[[1]][["Pr(>F)"]][1], 2)), 
+	#color="black", size=4, hjust=0, vjust=1)+
+	theme(plot.title=element_text(size=title_size, hjust=0.5), legend.key.size=unit(12, "pt"), 
+	legend.title=element_text(size=title_size, colour="black"), 
+	legend.text=element_text(size=text_size, colour="black"), 
+	legend.key=element_blank(), legend.background=element_blank(), 
+	axis.text=element_text(size=text_size, colour="black"), axis.title=element_text(size=title_size, colour="black"), 
+	axis.line=element_line(linewidth=0.35, color="black"), axis.ticks=element_line(linewidth=0.35, color="black"), 
+	legend.position=c(0.7, 0.23))+tag_thm
+
+#gene <- "Cenpq"
+#gene <- "Micos13"
+#gene <- "Pigp"
+#lims <- c(95, 140, 250)
+#gene <- "Npc2"
+#lims <- c(95, 140, 250)
+gene <- "Scg2"
+lims <- c(115, 115, 250)
+term <- deg_info$Term[which(deg_info$Symbol == gene)]
+trans <- scg[["features"]]$Trans[match(term, scg[["features"]]$Name)]
+gene <- scg[["features"]]$Symbol[match(term, scg[["features"]]$Name)]
+term_data <- data.frame(Cell=colnames(mat_utr5), Type=osn_rna$cell.subtype_fix, Length=mat_utr5[term,])
+#term_data <- term_data[which(term_data$Length > max(mean(term_data$Length)*2/3, mean(term_data$Length)-100)),]
+term_data <- term_data[which(term_data$Length > 0),]
+term_data$Group <- "Early"
+term_data$Group[which(term_data$Type == "mOSN" | term_data$Type == "iOSN")] <- "Later"
+term_data$Type <- factor(term_data$Type, levels=types)
+term_data$Group <- factor(term_data$Group, levels=c("Early", "Later"))
+term_data$LG <- "M"
+term_data$LG[which(term_data$Length < lims[1])] <- "S"
+term_data$LG[which(term_data$Length > lims[2])] <- "L"
+rec <- data.frame()
+for (type in c("Early", "Later")) rec <- rbind(rec, data.frame(Type=type, 
+	S=length(which(term_data$Length < lims[1] & term_data$Group == type)), 
+	M=length(which(term_data$Length >= lims[1] & term_data$Length <= lims[2] & term_data$Group == type)), 
+	L=length(which(term_data$Length > lims[2] & term_data$Group == type))))
+rec$RS <- rec$S*100/(rec$S+rec$M+rec$L)
+rec$RL <- rec$L*100/(rec$S+rec$M+rec$L)
+rec_caa <- rbind(data.frame(Type=rec$Type, Group="RS", Count=rec$RS), 
+	data.frame(Type=rec$Type, Group="RL", Count=rec$RL))
+rec_caa$Type <- factor(rec_caa$Type, levels=c("Early", "Later"))
+rec_caa$Group <- factor(rec_caa$Group, levels=c("RL", "RS"))
+pcaa <- ggplot(rec_caa, aes(x=Type, y=Count, fill=Group))+geom_bar(stat="identity", width=0.6)+
+	labs(title=NULL, x=gene, y="Percentage (%)", fill=NULL)+
+	scale_fill_manual(values=col_list[c(4,3)], drop=F)+
+	scale_y_continuous(breaks=c(25, 50, 75), expand=c(0, 0))+guides(fill=guide_legend(nrow=1))+
+	theme(plot.title=element_text(size=title_size, hjust=0.5), panel.background=element_blank(), legend.key.size=unit(12, "pt"), 
+	legend.key=element_blank(), legend.background=element_blank(), legend.position="none", axis.ticks.x=element_blank(), 
+	axis.text=element_text(size=text_size, colour="black"), axis.title.y=element_text(size=title_size, colour="black"), 
+	axis.title.x=element_text(size=title_size, colour="black", hjust=1.3), 
+	axis.line=element_line(linewidth=0.35, color="black"), axis.ticks.y=element_line(linewidth=0.35, color="black"))+tag_thm
+dens <- data.frame(density(term_data$Length)[c("x", "y")])
+dens <- dens[which(dens$x > 0 & dens$x < lims[3]),]
+dens$g <- "M"
+dens$g[which(dens$x < lims[1])] <- "S" 
+dens$g[which(dens$x > lims[2])] <- "L" 
+#ss <- which(dens$g == "M")
+#ss <- dens[c(ss[1], ss[length(ss)]),]
+#ss$g <- c("S", "L")
+#dens <- rbind(dens, ss)
+dens$g <- factor(dens$g, levels=c("S", "L"), labels=c("Short", "Long")) 
+pcab <- ggplot(dens, aes(x=x, y=y, color=g, fill=g))+geom_area(alpha=1)+
+	labs(title=NULL, x="Length of 3'UTR (bp)", y=NULL, color=NULL, fill=NULL)+
+	scale_color_manual(values=col_list[c(3,4)], drop=F)+
+	scale_fill_manual(values=col_list[c(3,4)], drop=F)+
+	guides(color=guide_legend(reverse=T), fill=guide_legend(reverse=T))+
+	scale_x_continuous(breaks=seq(0, 250, 50))+
+	scale_y_continuous(breaks=c((max(dens$y)+min(dens$y))/2), labels=c("Distribution"), expand=c(0, 0))+coord_flip()+
+	theme(plot.title=element_text(size=title_size, hjust=0.5), panel.background=element_blank(), legend.key.size=unit(12, "pt"), 
+	legend.key=element_blank(), legend.background=element_blank(), 
+	legend.title=element_text(size=title_size, colour="black"), legend.text=element_text(size=text_size, colour="black"), 
+	axis.text.x=element_text(size=text_size, colour="black"), 
+	axis.text.y=element_text(size=text_size, colour="black", angle=90, hjust=0.5, vjust=0.5), 
+	axis.title=element_text(size=title_size, colour="black"), 
+	axis.ticks.y=element_line(linewidth=0.35, color="black"), axis.ticks.x=element_blank(), 
+	axis.line.y=element_line(linewidth=0.35, color="black"), axis.line.x=element_blank(), 
+	legend.position=c(0.6, 0.8))+tag_thm
+pca <- wrap_elements(wrap_plots(list(pcaa, pcab), nrow=1)+tag_thm)+tag_thm
+#pca<- ggplot(term_data, aes(x=type, y=Length, fill=Group, color=Group))+geom_violin()+
+#	geom_boxplot(width=0.2, outlier.alpha=0, fill="white")+scale_y_continuous()+
+#	scale_x_discrete(drop=F)+scale_fill_manual(values=brewer.pal(9,"YlGnBu")[c(6,9)], drop=F)+
+#	scale_color_manual(values=brewer.pal(9,"YlGnBu")[c(6,9)], drop=F)+
+#	#annotate("text", x=0.5, y=1500, label=paste0("F=", round(r[[1]][["F value"]][1], 2), "\nPval=", round(r[[1]][["Pr(>F)"]][1], 2)), 
+#	#color="black", size=4, hjust=0, vjust=1)+
+#	labs(title=NULL, x="3'UTR length of Scg2", y="Length of 5'UTR (bp)")+
+#	theme(axis.title=element_text(size=title_size, colour="black"), axis.text=element_text(size=text_size, colour="black"), 
+#	axis.line=element_line(colour="black"), legend.position="none")+tag_thm
 
 ego <- read.csv("num_go.csv", r=1, h=T)
 ego <- ego[c(1,2,4:11),]
 ego$Rank <- factor(rev(1:nrow(ego)))
 ego$Type <- "Genes with increased isoforms"
-rec_ba <- ego
-pba <- ggplot(rec_ba, aes(x=Count, y=Rank, color=pvalue, size=Count))+geom_point()+
+rec_aa <- ego
+paa <- ggplot(rec_aa, aes(x=Count, y=Rank, color=pvalue, size=Count))+geom_point()+
 	scale_color_gradient(low="#440255", high="#FFFFBF")+
 	#scale_color_continuous(low=brewer.pal(11,"Spectral")[1], high=brewer.pal(11,"Spectral")[6], 
 	#guide=guide_colorbar(reverse=TRUE))+
-	scale_y_discrete(breaks=rec_ba$Rank, labels=rec_ba$Description, position="right")+
+	scale_size_continuous(breaks=c(25,28,30,32,35))+
+	scale_y_discrete(breaks=rec_aa$Rank, labels=rec_aa$Description, position="right")+
 	facet_grid(Type~., scales="free_y", space="free_y", switch="y")+
 	guides(color=guide_colorbar(order=1), size=guide_legend(order=0))+
 	labs(title=NULL, x=NULL, y=NULL, color="p.val")+
-	theme(axis.text.x=element_blank(), axis.ticks=element_blank(), 
+	theme(axis.text.x=element_blank(), axis.ticks=element_blank(), legend.key.size=unit(12, "pt"), 
 	axis.text.y=element_text(size=text_size, colour="black"), 
 	legend.title=element_text(size=title_size, colour="black"), 
 	legend.text=element_text(size=text_size, colour="black"), 
 	strip.background=element_rect(colour=col_list[2], fill=col_list[2]), 
-	strip.text=element_text(size=text_size, color="white", face="bold"), 
+	strip.text=element_text(size=title_size, color="white", face="bold"), 
 	panel.spacing=unit(5, "pt"), panel.grid.major=element_blank(), panel.grid.minor=element_blank(), 
 	axis.line=element_blank(), panel.background=element_rect(fill='gray98'))+tag_thm
 
@@ -296,21 +378,22 @@ ego <- read.csv("test_go4.csv", r=1, h=T)
 ego <- ego[1:10,]
 ego$Rank <- factor(rev(1:nrow(ego)))
 ego$Type <- "High expression novel isoforms"
-rec_bb <- ego
-pbb <- ggplot(rec_bb, aes(x=Count, y=Rank, color=pvalue, size=Count))+geom_point()+
+rec_ab <- ego
+pab <- ggplot(rec_ab, aes(x=Count, y=Rank, color=pvalue, size=Count))+geom_point()+
 	scale_color_gradient(low="#440255", high="#FFFFBF")+
 	#scale_color_continuous(low=brewer.pal(11,"Spectral")[1], high=brewer.pal(11,"Spectral")[6], 
 	#guide=guide_colorbar(reverse=TRUE))+
-	scale_y_discrete(breaks=rec_bb$Rank, labels=rec_bb$Description, position="right")+
+	scale_size_continuous(breaks=c(5,7,9,11))+
+	scale_y_discrete(breaks=rec_ab$Rank, labels=rec_ab$Description, position="right")+
 	facet_grid(Type~., scales="free_y", space="free_y", switch="y")+
 	guides(color=guide_colorbar(order=1), size=guide_legend(order=0))+
 	labs(title=NULL, x=NULL, y=NULL, color="p.val")+
-	theme(axis.text.x=element_blank(), axis.ticks=element_blank(), 
+	theme(axis.text.x=element_blank(), axis.ticks=element_blank(), legend.key.size=unit(12, "pt"), 
 	axis.text.y=element_text(size=text_size, colour="black"), 
 	legend.title=element_text(size=title_size, colour="black"), 
 	legend.text=element_text(size=text_size, colour="black"), 
 	strip.background=element_rect(color=col_list[2], fill=col_list[2]), 
-	strip.text=element_text(size=text_size, colour="white", face="bold"), 
+	strip.text=element_text(size=title_size, colour="white", face="bold"), 
 	panel.spacing=unit(5, "pt"), panel.grid.major=element_blank(), panel.grid.minor=element_blank(), 
 	axis.line=element_blank(), panel.background=element_rect(fill='gray98'))+tag_thm
 
@@ -326,29 +409,29 @@ ego_total$Rank <- factor(rev(1:nrow(ego_total)))
 ego_total$Type <- factor(ego_total$Type, levels=4:1, labels=rev(c("HBC>GBC", "GBC>INP", "INP>iOSN", "iOSN>mOSN")))
 rec_bca <- ego_total
 cols <- rev(colorRampPalette(brewer.pal(9,"YlOrRd")[c(2,5,9)])(4))
-pca <- ggplot(rec_bca, aes(x=Count, y=Rank, color=pvalue, size=Count))+geom_point()+
+pcb <- ggplot(rec_bca, aes(x=Count, y=Rank, color=pvalue, size=Count))+geom_point()+
 	scale_color_gradient(low="#440255", high="#FFFFBF")+
 	scale_y_discrete(breaks=rec_bca$Rank, labels=rec_bca$Description, position="right")+
 	facet_grid2(Type~., scales="free_y", space="free_y", switch="y", 
 	strip=strip_themed(background_y=elem_list_rect(color=cols, fill=cols)))+
 	guides(color=guide_colorbar(order=1), size=guide_legend(order=0))+
 	labs(title=NULL, x=NULL, y=NULL, color="p.val")+
-	theme(axis.text.x=element_blank(), axis.ticks=element_blank(), 
+	theme(axis.text.x=element_blank(), axis.ticks=element_blank(), legend.key.size=unit(12, "pt"), 
 	axis.text.y=element_text(size=text_size, colour="black"), 
 	legend.title=element_text(size=title_size, colour="black"), 
 	legend.text=element_text(size=text_size, colour="black"), 
-	strip.text=element_text(size=text_size, colour="white", face="bold"), 
+	strip.text=element_text(size=title_size, colour="white", face="bold"), 
 	panel.grid.major=element_blank(), panel.grid.minor=element_blank(), 
 	axis.line=element_blank(), panel.background=element_rect(fill='gray98'))+tag_thm
 
 pblank <- wrap_elements(ggplot()+geom_blank()+theme(panel.background=element_blank()))+tag_thm
 ggsave(plot=wrap_plots(list(
-	wrap_elements(wrap_plots(list(paa,pab,pac,pad), nrow=1, widths=c(0.6,0.6,1,1))+
-	plot_annotation(tag_levels=list(c("A", "B", "C", "D")), theme=tag_thm))+tag_thm, 
-	wrap_elements(wrap_plots(list(pba,pbb), nrow=1, widths=c(1,1))+
-	plot_annotation(tag_levels=list(c("E", "F")), theme=tag_thm))+tag_thm, 
-	wrap_elements(wrap_plots(list(pca, pblank), nrow=1, widths=c(1,6))+
-	plot_annotation(tag_levels=list(c("G")), theme=tag_thm))+tag_thm), 
-	ncol=1, heights=c(1,1,1)), width=13, height=12, dpi=200, filename="oe_fl_fig_S02.png", limitsize=F)
-
+	wrap_elements(wrap_plots(list(paa,pab), nrow=1, widths=c(1,1))+
+	plot_annotation(tag_levels=list(c("A", "B")), theme=tag_thm))+tag_thm, 
+	wrap_elements(wrap_plots(list(pba,pbb,pbc,pbd,pbe), nrow=1, widths=c(1,0.5,0.5,0.5,0.5))+
+	plot_annotation(tag_levels=list(c("C", "E", "", "", "")), theme=tag_thm))+tag_thm, 
+	wrap_elements(wrap_plots(list(pca, pcb), nrow=1, widths=c(6,1))+
+	plot_annotation(tag_levels=list(c("D", "F")), theme=tag_thm))+tag_thm, 
+	pblank), ncol=1, heights=c(1,1,1,1.6)), 
+	width=210, height=297, dpi=300, units="mm", filename="oe_fl_fig_S02.pdf", limitsize=F)
 
