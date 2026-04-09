@@ -36,6 +36,8 @@ library(MASS)
 library(cowplot)
 library(magick)
 library(ggh4x)
+library(factR)
+library(BSgenome.Mmusculus.UCSC.mm10)
 options(stringsAsFactors=FALSE)
 
 col_list <- c(c("#46998b", "#847acc", "#ef8560", "#6994b3", "#d1934b", "#8fb350", "#de9cba", "#7b469e", 
@@ -43,201 +45,301 @@ col_list <- c(c("#46998b", "#847acc", "#ef8560", "#6994b3", "#d1934b", "#8fb350"
 text_size <- 8
 title_size <- 9
 choose_font("Arial")
-tag_thm <- theme(plot.tag=element_text(size=title_size, face="bold", color="black"), plot.margin=margin(-5,-5,-3,-5), panel.spacing=unit(0, "pt"), 
+tag_thm <- theme(plot.tag=element_text(size=title_size, face="bold", color="black"), plot.margin=margin(-2,-5,-2,-5), panel.spacing=unit(0, "pt"), 
 	panel.background=element_rect(fill="transparent", color=NA),  plot.background=element_rect(fill="transparent", color=NA), 
 	legend.box.spacing=unit(0, "pt"))
 
-#gtf <- read.table("genes.gtf", sep="\t")
-#gtf <- gtf[grep("^chr.*", gtf[, 1]),]
-#colnames(gtf) <- c("seq_id", "source", "type", "start", "end", "score", "strand", "phase", "attributes")
-#gtf$transcript_id <- gsub(";.*", "", gsub(".*transcript_id ", "", gtf$attributes))
-#gtf$gene_id <- gsub(";.*", "", gsub(".*gene_id ", "", gtf$attributes))
-#gtf$gene_name <- gsub(";.*", "", gsub(".*gene_name ", "", gtf$attributes))
-#gtf <- read.delim("gtf_info.tsv")
-#
-#osn_rna <- readRDS("osn_rna2_fix.rds")
-##rec <- data.frame(bc=colnames(osn_rna), type="mOSN)
-##write.table(rec, "/mnt/md0/oe_full_length/output/OSNfulllength/osn_bc_info.tsv", col.names=F, row.names=F, quote=F, sep="\t")
-#data_raw <- H5File$new("/mnt/md0/oe_full_length/output/OSNfulllength/osn_trans_ass.h5", mode="r")
-#sct <- list()
-#sparse.mat <- sparseMatrix(i=data_raw[["matrix/indices"]][]+1, p=data_raw[["matrix/indptr"]][], 
-#	x=as.numeric(data_raw[["matrix/data"]][]), dims=data_raw[["matrix/shape"]][], repr = "T")
-#rownames(sparse.mat) <- data_raw[["matrix/genes"]][]
-#colnames(sparse.mat) <- data_raw[["matrix/barcodes"]][]
-#sparse.utr3 <- sparseMatrix(i=data_raw[["matrix/indices"]][]+1, p=data_raw[["matrix/indptr"]][], 
-#	x=as.numeric(data_raw[["matrix/utr3"]][]), dims=data_raw[["matrix/shape"]][], repr = "T")
-#rownames(sparse.utr3) <- data_raw[["matrix/genes"]][]
-#colnames(sparse.utr3) <- data_raw[["matrix/barcodes"]][]
-#sparse.utr5 <- sparseMatrix(i=data_raw[["matrix/indices"]][]+1, p=data_raw[["matrix/indptr"]][], 
-#	x=as.numeric(data_raw[["matrix/utr5"]][]), dims=data_raw[["matrix/shape"]][], repr = "T")
-#rownames(sparse.utr5) <- data_raw[["matrix/genes"]][]
-#colnames(sparse.utr5) <- data_raw[["matrix/barcodes"]][]
-#sct[["matrix"]] <- as.sparse(sparse.mat)
-#sct[["utr3"]] <- as.sparse(sparse.utr3)
-#sct[["utr5"]] <- as.sparse(sparse.utr5)
-#sct[["features"]] <- data.frame(Name=data_raw[["matrix/features/name"]][], ID=data_raw[["matrix/features/id"]][], 
-#	Chr=data_raw[["matrix/features/chr"]][], Strand=data_raw[["matrix/features/strand"]][], Gene=data_raw[["matrix/features/gene"]][], 
-#	Type=data_raw[["matrix/features/type"]][], UTR3=data_raw[["matrix/features/utr3"]][], UTR5=data_raw[["matrix/features/utr5"]][], 
-#	Body=data_raw[["matrix/features/body"]][], Exon=data_raw[["matrix/features/exon"]][])
-#sct[["features"]]$Count <- rowSums(sct[["matrix"]])
-#sct[["features"]]$Symbol <- gtf$gene_name[match(sct[["features"]]$Gene, gtf$gene_id)]
-#data_raw$close_all()
-#osn_sct_raw <- list()
-#osn_sct_raw[["trans"]] <- sct[["matrix"]]
-#osn_sct_raw[["utr3"]] <- sct[["utr3"]]
-#osn_sct_raw[["utr5"]] <- sct[["utr5"]]
-#osn_sct_raw[["features"]] <- sct[["features"]]
-#osn_sct_raw[["features"]]$ID <- sct[["features"]]$Name
-#olfr_info <- read.csv("/mnt/md0/oe_full_length/output/OSNfulllength/olfr_info.csv", h=T)
-#olfr_info <- olfr_info[match(osn_sct_raw[["features"]]$ID[grep("^Olfr", osn_sct_raw[["features"]]$Symbol)], olfr_info$ID),]
-#olfr_info <- olfr_info[order(olfr_info$UTR),]
-#olfr_info <- olfr_info[order(olfr_info$TSS),]
-#olfr_info <- olfr_info[order(olfr_info$TypeE),]
-#olfr_info <- olfr_info[order(olfr_info$TypeC),]
-#olfr_info <- olfr_info[order(olfr_info$Gene),]
-#olfr_info$CSS <- "Same"
-#olfr_info$CSS[grep("A3SS", olfr_info$TypeC)] <- "Diff"
-#olfr_info$CSS[grep("SE", olfr_info$TypeC)] <- "Diff"
-#write.table(olfr_info, "osn_iso_info_all.tsv", sep="\t", quote=F, row.names=F)
-#olfr_sct <- osn_sct_raw[["trans"]][match(olfr_info$ID, osn_sct_raw[["features"]]$ID),]
-#olfr_sct <- olfr_sct[, which(colSums(olfr_sct) > 0)]
-#olfr_sct_info <- olfr_info[match(rownames(olfr_sct), olfr_info$ID),]
-#olfr_sct_info$Count <- rowSums(olfr_sct)
-#
-#count <- 0
-#rec <- c()
-#isoforms <- c()
-#cells_nano <- data.frame()
-#for (i in 1:ncol(olfr_sct))
-#{
-#	terms <- olfr_sct_info[which(olfr_sct[, i] > 0),, drop=F]
-#	ids <- which(terms$TypeC == "-")
-#	if (length(ids) == 0)
-#	{
-#		if (length(unique(terms$Gene)) == 1) cells_nano <- rbind(cells_nano, data.frame(Cell=colnames(olfr_sct)[i], 
-#			Gene=terms$Gene[1], Symbol=terms$Symbol[1], Num=nrow(terms), Same=nrow(terms), Other=0, Main=0, Sub=0, 
-#			Isoform=paste0(terms$ID, collapse=",")))
-#		next
-#	}
-#	if (length(unique(terms$Gene[ids])) > 1)
-#	{
-#		count <- count + 1
-#		next
-#	}
-#	nf <- terms$ID[ids[which.max(olfr_sct[terms$ID[ids], i])]]
-#	ns <- terms$ID[which(terms$Gene == terms$Gene[ids[1]] & terms$ID != nf)]
-#	nf <- olfr_sct[nf, i]
-#	nsc <- 0
-#	if (length(ns) > 0) nsc <- sum(olfr_sct[ns, i])
-#	cells_nano <- rbind(cells_nano, data.frame(Cell=colnames(olfr_sct)[i], Gene=terms$Gene[ids[1]], Symbol=terms$Symbol[ids[1]], 
-#		Num=nrow(terms), Same=length(ns), Other=nrow(terms)-length(ns)-1, Main=nf, Sub=nsc, Isoform=paste0(terms$ID, collapse=",")))
-#	ids <- which(terms$TSS == "-")
-#	if (length(ids) > 0) isoforms <- c(isoforms, terms$ID[-1])
-#	ids <- which(terms$Gene == terms$Gene[ids[1]] & terms$CSS == "Same" & terms$Count > 0)
-#	if (length(ids) > 1) rec <- c(rec, terms$ID[ids])
-#}
-#isoforms <- olfr_sct_info[match(unique(isoforms), olfr_sct_info$ID),]
-#rec <- olfr_sct_info[match(unique(rec), olfr_sct_info$ID),]
-#ids <- match(rec$ID, osn_sct_raw[["features"]]$ID)
-#rec$Chr <- osn_sct_raw[["features"]]$Chr[ids]
-#rec$Strand <- osn_sct_raw[["features"]]$Strand[ids]
-#rec$UL <- osn_sct_raw[["features"]]$UTR3[ids]+osn_sct_raw[["features"]]$UTR5[ids]
-#for (i in 1:nrow(rec))
-#{
-#	if (rec$UL[i] != 0) next
-#	ids <- which(olfr_info$Gene == rec$Gene[i] & olfr_info$CDS != "")
-#	if (length(ids) == 0) print("???")
-#	strand <- substr(rec$Gene[i], nchar(rec$Gene[i]), nchar(rec$Gene[i]))
-#	ss <- as.numeric(unlist(strsplit(unlist(strsplit(olfr_info$CDS[ids[1]], split="-")), split=";")))
-#	exons <- unlist(strsplit(rec$Exon[i], split=";"))
-#	cds <- c()
-#	if (strand == "+")
-#	{
-#		ss <- ss[1]
-#		for (e in exons)
-#		{
-#			e <- as.numeric(unlist(strsplit(e, split="-")))
-#			if (e[2] < ss) next
-#			cds <- c(cds, paste0(max(e[1], ss), "-", e[2]))
-#		}
-#	} else {
-#		ss <- ss[length(ss)]
-#		for (e in exons)
-#		{
-#			e <- as.numeric(unlist(strsplit(e, split="-")))
-#			if (e[1] > ss) break
-#			cds <- c(cds, paste0(e[1], "-", min(e[2], ss)))
-#		}
-#	}
-#	rec$CDS[i] <- paste0(cds, collapse=";")
-#}
-#iso_trans_test <- rec
-#write.table(isoforms, "osn_iso_info.tsv", sep="\t", quote=F, row.names=F)
-#write.table(cells_nano, "osn_olfr_info.tsv", sep="\t", quote=F, row.names=F)
-#write.table(iso_trans_test, "osn_iso_trans_test.tsv", sep="\t", quote=F, row.names=F)
+gtf <- read.table("genes.gtf", sep="\t")
+gtf <- gtf[grep("^chr.*", gtf[, 1]),]
+colnames(gtf) <- c("seq_id", "source", "type", "start", "end", "score", "strand", "phase", "attributes")
+gtf$transcript_id <- gsub(";.*", "", gsub(".*transcript_id ", "", gtf$attributes))
+gtf$gene_id <- gsub(";.*", "", gsub(".*gene_id ", "", gtf$attributes))
+gtf$gene_name <- gsub(";.*", "", gsub(".*gene_name ", "", gtf$attributes))
+gtf <- read.delim("gtf_info.tsv")
+
+osn_rna <- readRDS("osn_rna2_fix.rds")
+rec <- data.frame(bc=colnames(osn_rna), type="mOSN)
+write.table(rec, "/mnt/md0/oe_full_length/output/OSNfulllength/osn_bc_info.tsv", col.names=F, row.names=F, quote=F, sep="\t")
+data_raw <- H5File$new("/mnt/md0/oe_full_length/output/OSNfulllength/osn_trans_ass.h5", mode="r")
+sct <- list()
+sparse.mat <- sparseMatrix(i=data_raw[["matrix/indices"]][]+1, p=data_raw[["matrix/indptr"]][], 
+	x=as.numeric(data_raw[["matrix/data"]][]), dims=data_raw[["matrix/shape"]][], repr = "T")
+rownames(sparse.mat) <- data_raw[["matrix/genes"]][]
+colnames(sparse.mat) <- data_raw[["matrix/barcodes"]][]
+sparse.utr3 <- sparseMatrix(i=data_raw[["matrix/indices"]][]+1, p=data_raw[["matrix/indptr"]][], 
+	x=as.numeric(data_raw[["matrix/utr3"]][]), dims=data_raw[["matrix/shape"]][], repr = "T")
+rownames(sparse.utr3) <- data_raw[["matrix/genes"]][]
+colnames(sparse.utr3) <- data_raw[["matrix/barcodes"]][]
+sparse.utr5 <- sparseMatrix(i=data_raw[["matrix/indices"]][]+1, p=data_raw[["matrix/indptr"]][], 
+	x=as.numeric(data_raw[["matrix/utr5"]][]), dims=data_raw[["matrix/shape"]][], repr = "T")
+rownames(sparse.utr5) <- data_raw[["matrix/genes"]][]
+colnames(sparse.utr5) <- data_raw[["matrix/barcodes"]][]
+sct[["matrix"]] <- as.sparse(sparse.mat)
+sct[["utr3"]] <- as.sparse(sparse.utr3)
+sct[["utr5"]] <- as.sparse(sparse.utr5)
+sct[["features"]] <- data.frame(Name=data_raw[["matrix/features/name"]][], ID=data_raw[["matrix/features/id"]][], 
+	Chr=data_raw[["matrix/features/chr"]][], Strand=data_raw[["matrix/features/strand"]][], Gene=data_raw[["matrix/features/gene"]][], 
+	Type=data_raw[["matrix/features/type"]][], UTR3=data_raw[["matrix/features/utr3"]][], UTR5=data_raw[["matrix/features/utr5"]][], 
+	Body=data_raw[["matrix/features/body"]][], Exon=data_raw[["matrix/features/exon"]][])
+sct[["features"]]$Count <- rowSums(sct[["matrix"]])
+sct[["features"]]$Symbol <- gtf$gene_name[match(sct[["features"]]$Gene, gtf$gene_id)]
+data_raw$close_all()
+osn_sct_raw <- list()
+osn_sct_raw[["trans"]] <- sct[["matrix"]]
+osn_sct_raw[["utr3"]] <- sct[["utr3"]]
+osn_sct_raw[["utr5"]] <- sct[["utr5"]]
+osn_sct_raw[["features"]] <- sct[["features"]]
+osn_sct_raw[["features"]]$ID <- sct[["features"]]$Name
+olfr_info_ori <- read.csv("/mnt/md0/oe_full_length/output/OSNfulllength/olfr_info.csv", h=T)
+olfr_info_ori <- olfr_info_ori[order(olfr_info_ori$UTR),]
+olfr_info_ori <- olfr_info_ori[order(olfr_info_ori$TSS),]
+olfr_info_ori <- olfr_info_ori[order(olfr_info_ori$TypeE),]
+olfr_info_ori <- olfr_info_ori[order(olfr_info_ori$TypeC),]
+olfr_info_ori <- olfr_info_ori[order(olfr_info_ori$Gene),]
+olfr_info_ori$CSS <- "Same"
+olfr_info_ori$CSS[grep("A3SS", olfr_info_ori$TypeC)] <- "Diff"
+olfr_info_ori$CSS[grep("SE", olfr_info_ori$TypeC)] <- "Diff"
+olfr_info <- olfr_info_ori[match(osn_sct_raw[["features"]]$ID[grep("^Olfr", osn_sct_raw[["features"]]$Symbol)], olfr_info_ori$ID),]
+write.table(olfr_info, "osn_iso_info_all.tsv", sep="\t", quote=F, row.names=F)
+olfr_sct <- osn_sct_raw[["trans"]][match(olfr_info$ID, osn_sct_raw[["features"]]$ID),]
+olfr_sct <- olfr_sct[, which(colSums(olfr_sct) > 0)]
+olfr_sct_info <- olfr_info[match(rownames(olfr_sct), olfr_info$ID),]
+olfr_sct_info$Count <- rowSums(olfr_sct)
+olfr_sct_info$CountP <- rowSums(olfr_sct > 0)
+
+count <- 0
+rec <- c()
+isoforms <- c()
+cells_nano <- data.frame()
+for (i in 1:ncol(olfr_sct))
+{
+	terms <- olfr_sct_info[which(olfr_sct[, i] > 0),, drop=F]
+	ids <- which(terms$TypeC == "-")
+	if (length(ids) == 0)
+	{
+		if (length(unique(terms$Gene)) == 1) cells_nano <- rbind(cells_nano, data.frame(Cell=colnames(olfr_sct)[i], 
+			Gene=terms$Gene[1], Symbol=terms$Symbol[1], Num=nrow(terms), Same=nrow(terms), Other=0, Main=0, Sub=0, 
+			Isoform=paste0(terms$ID, collapse=",")))
+		next
+	}
+	if (length(unique(terms$Gene[ids])) > 1)
+	{
+		count <- count + 1
+		next
+	}
+	nf <- terms$ID[ids[which.max(olfr_sct[terms$ID[ids], i])]]
+	ns <- terms$ID[which(terms$Gene == terms$Gene[ids[1]] & terms$ID != nf)]
+	nf <- olfr_sct[nf, i]
+	nsc <- 0
+	if (length(ns) > 0) nsc <- sum(olfr_sct[ns, i])
+	cells_nano <- rbind(cells_nano, data.frame(Cell=colnames(olfr_sct)[i], Gene=terms$Gene[ids[1]], Symbol=terms$Symbol[ids[1]], 
+		Num=nrow(terms), Same=length(ns), Other=nrow(terms)-length(ns)-1, Main=nf, Sub=nsc, Isoform=paste0(terms$ID, collapse=",")))
+	ids <- which(terms$TSS == "-")
+	if (length(ids) > 0) isoforms <- c(isoforms, terms$ID[-ids[1]])
+	ids <- which(terms$Gene == terms$Gene[ids[1]] & terms$CSS == "Same" & terms$Count > 0)
+	if (length(ids) > 1) rec <- c(rec, terms$ID[ids])
+}
+rec <- c(rec, "ENSMUST00000215616")
+isoforms <- olfr_sct_info[match(unique(isoforms), olfr_sct_info$ID),]
+rec <- olfr_sct_info[match(unique(rec), olfr_sct_info$ID),]
+ids <- match(rec$ID, osn_sct_raw[["features"]]$ID)
+rec$Chr <- osn_sct_raw[["features"]]$Chr[ids]
+rec$Strand <- osn_sct_raw[["features"]]$Strand[ids]
+rec$UL <- osn_sct_raw[["features"]]$UTR3[ids]+osn_sct_raw[["features"]]$UTR5[ids]
+for (i in 1:nrow(rec))
+{
+	if (rec$UL[i] != 0) next
+	ids <- which(olfr_info_ori$Gene == rec$Gene[i] & olfr_info_ori$CDS != "")
+	if (length(ids) == 0) print("???")
+	strand <- substr(rec$Gene[i], nchar(rec$Gene[i]), nchar(rec$Gene[i]))
+	ss <- as.numeric(unlist(strsplit(unlist(strsplit(olfr_info_ori$CDS[ids[1]], split="-")), split=";")))
+	exons <- unlist(strsplit(rec$Exon[i], split=";"))
+	cds <- c()
+	if (strand == "+")
+	{
+		ss <- ss[1]
+		for (e in exons)
+		{
+			e <- as.numeric(unlist(strsplit(e, split="-")))
+			if (e[2] < ss) next
+			cds <- c(cds, paste0(max(e[1], ss), "-", e[2]))
+		}
+	} else {
+		ss <- ss[length(ss)]
+		for (e in exons)
+		{
+			e <- as.numeric(unlist(strsplit(e, split="-")))
+			if (e[1] > ss) break
+			cds <- c(cds, paste0(e[1], "-", min(e[2], ss)))
+		}
+	}
+	rec$CDS[i] <- paste0(cds, collapse=";")
+}
+iso_trans_test <- rec
+write.table(isoforms, "osn_iso_info.tsv", sep="\t", quote=F, row.names=F)
+write.table(cells_nano, "osn_olfr_info.tsv", sep="\t", quote=F, row.names=F)
+write.table(iso_trans_test, "osn_iso_trans_test.tsv", sep="\t", quote=F, row.names=F)
+
 ################################################################################
-#sce <- CreateSeuratObject(Read10X("/mnt/md0/oe_full_length/output/OSNfulllength/OSNfulllength.gene_raw_feature_bc_matrix"), project="nano")
-#length(which(colSums(sce[["RNA"]]$counts[grep("^Olfr", rownames(sce[["RNA"]]$counts)), colnames(osn_sct_raw[["trans"]])]) == 0))
-#172
-#sce <- CreateSeuratObject(Read10X("/mnt/md0/oe_full_length/output/OSNfulllength/OSNfulllength.transcript_processed_feature_bc_matrix"), project="nano")
-#length(which(colSums(sce[["RNA"]]$counts[grep("^Olfr", gtf$gene_name[match(rownames(sce), gtf$transcript_id)]), 
-#	intersect(colnames(osn_sct_raw[["trans"]]), colnames(sce))]) == 0))
-#1847
-#length(which(colSums(osn_rna[["RNA"]]$counts[grep("^Olfr", rownames(osn_rna[["RNA"]]$counts)),]) == 0))
-#length(which(colSums(osn_sct_raw[["trans"]][grep("^Olfr", osn_sct_raw[["features"]]$Symbol),]) == 0))
-#58/6206/9848 (RNA/Nano/Total)
-#ids_rna <- grep("^Olfr", rownames(osn_rna[["RNA"]]$counts))
-#ra_mat <- osn_rna[["RNA"]]$counts[ids_rna, cells_nano$Cell]
-#ids <- match(cells_nano$Symbol, rownames(ra_mat))
-#rec <- c()
-#for (i in 1:nrow(cells_nano))
-#{
-#	if (is.na(ids[i])) next
-#	if (ra_mat[ids[i], i] > 0) rec <- c(rec, i)
-#}
-#3224/3394 (same/total)
-#6207/247/3394/9848 (none/multi/single/total)
+osn_rna <- readRDS("osn_rna.rds")
+rec <- data.frame(bc=colnames(osn_rna), type=osn_rna$cell.subtype_fix)
+write.table(rec, "/mnt/md0/oe_full_length/output/OEfulllength/neuron_bc_info.tsv", col.names=F, row.names=F, quote=F, sep="\t")
+data_raw <- H5File$new("/mnt/md0/oe_full_length/output/OEfulllength/osn_trans_ass.h5", mode="r")
+sct <- list()
+sparse.mat <- sparseMatrix(i=data_raw[["matrix/indices"]][]+1, p=data_raw[["matrix/indptr"]][], 
+	x=as.numeric(data_raw[["matrix/data"]][]), dims=data_raw[["matrix/shape"]][], repr = "T")
+rownames(sparse.mat) <- data_raw[["matrix/genes"]][]
+colnames(sparse.mat) <- data_raw[["matrix/barcodes"]][]
+sparse.utr3 <- sparseMatrix(i=data_raw[["matrix/indices"]][]+1, p=data_raw[["matrix/indptr"]][], 
+	x=as.numeric(data_raw[["matrix/utr3"]][]), dims=data_raw[["matrix/shape"]][], repr = "T")
+rownames(sparse.utr3) <- data_raw[["matrix/genes"]][]
+colnames(sparse.utr3) <- data_raw[["matrix/barcodes"]][]
+sparse.utr5 <- sparseMatrix(i=data_raw[["matrix/indices"]][]+1, p=data_raw[["matrix/indptr"]][], 
+	x=as.numeric(data_raw[["matrix/utr5"]][]), dims=data_raw[["matrix/shape"]][], repr = "T")
+rownames(sparse.utr5) <- data_raw[["matrix/genes"]][]
+colnames(sparse.utr5) <- data_raw[["matrix/barcodes"]][]
+sct[["matrix"]] <- as.sparse(sparse.mat)
+sct[["utr3"]] <- as.sparse(sparse.utr3)
+sct[["utr5"]] <- as.sparse(sparse.utr5)
+sct[["features"]] <- data.frame(Name=data_raw[["matrix/features/name"]][], ID=data_raw[["matrix/features/id"]][], 
+	Chr=data_raw[["matrix/features/chr"]][], Strand=data_raw[["matrix/features/strand"]][], Gene=data_raw[["matrix/features/gene"]][], 
+	Type=data_raw[["matrix/features/type"]][], UTR3=data_raw[["matrix/features/utr3"]][], UTR5=data_raw[["matrix/features/utr5"]][], 
+	Body=data_raw[["matrix/features/body"]][], Exon=data_raw[["matrix/features/exon"]][])
+sct[["features"]]$Count <- rowSums(sct[["matrix"]])
+sct[["features"]]$Symbol <- gtf$gene_name[match(sct[["features"]]$Gene, gtf$gene_id)]
+data_raw$close_all()
+osn_sct_raw <- list()
+osn_sct_raw[["trans"]] <- sct[["matrix"]]
+osn_sct_raw[["utr3"]] <- sct[["utr3"]]
+osn_sct_raw[["utr5"]] <- sct[["utr5"]]
+osn_sct_raw[["features"]] <- sct[["features"]]
+osn_sct_raw[["features"]]$ID <- sct[["features"]]$Name
+olfr_info <- read.csv("/mnt/md0/oe_full_length/output/OEfulllength/olfr_info.csv", h=T)
+olfr_info <- olfr_info[match(osn_sct_raw[["features"]]$ID[grep("^Olfr", osn_sct_raw[["features"]]$Symbol)], olfr_info$ID),]
+olfr_info <- olfr_info[order(olfr_info$UTR),]
+olfr_info <- olfr_info[order(olfr_info$TSS),]
+olfr_info <- olfr_info[order(olfr_info$TypeE),]
+olfr_info <- olfr_info[order(olfr_info$TypeC),]
+olfr_info <- olfr_info[order(olfr_info$Gene),]
+olfr_info$CSS <- "Same"
+olfr_info$CSS[grep("A3SS", olfr_info$TypeC)] <- "Diff"
+olfr_info$CSS[grep("SE", olfr_info$TypeC)] <- "Diff"
+write.table(olfr_info, "oe_iso_info_all.tsv", sep="\t", quote=F, row.names=F)
+olfr_sct <- osn_sct_raw[["trans"]][match(olfr_info$ID, osn_sct_raw[["features"]]$ID),]
+olfr_sct <- olfr_sct[, which(colSums(olfr_sct) > 0)]
+olfr_sct_info <- olfr_info[match(rownames(olfr_sct), olfr_info$ID),]
+olfr_sct_info$Count <- rowSums(olfr_sct)
+olfr_sct_info$CountP <- rowSums(olfr_sct > 0)
+
+count <- 0
+rec <- c()
+isoforms <- c()
+cells_nano <- data.frame()
+for (i in 1:ncol(olfr_sct))
+{
+	terms <- olfr_sct_info[which(olfr_sct[, i] > 0),, drop=F]
+	ids <- which(terms$TypeC == "-")
+	if (length(ids) == 0)
+	{
+		if (length(unique(terms$Gene)) == 1) cells_nano <- rbind(cells_nano, data.frame(Cell=colnames(olfr_sct)[i], 
+			Gene=terms$Gene[1], Symbol=terms$Symbol[1], Num=nrow(terms), Same=nrow(terms), Other=0, Main=0, Sub=0, 
+			Isoform=paste0(terms$ID, collapse=",")))
+		next
+	}
+	if (length(unique(terms$Gene[ids])) > 1)
+	{
+		count <- count + 1
+		next
+	}
+	nf <- terms$ID[ids[which.max(olfr_sct[terms$ID[ids], i])]]
+	ns <- terms$ID[which(terms$Gene == terms$Gene[ids[1]] & terms$ID != nf)]
+	nf <- olfr_sct[nf, i]
+	nsc <- 0
+	if (length(ns) > 0) nsc <- sum(olfr_sct[ns, i])
+	cells_nano <- rbind(cells_nano, data.frame(Cell=colnames(olfr_sct)[i], Gene=terms$Gene[ids[1]], Symbol=terms$Symbol[ids[1]], 
+		Num=nrow(terms), Same=length(ns), Other=nrow(terms)-length(ns)-1, Main=nf, Sub=nsc, Isoform=paste0(terms$ID, collapse=",")))
+	ids <- which(terms$TSS == "-")
+	if (length(ids) > 0) isoforms <- c(isoforms, terms$ID[-ids[1]])
+	ids <- which(terms$Gene == terms$Gene[ids[1]] & terms$CSS == "Same" & terms$Count > 0)
+	if (length(ids) > 1) rec <- c(rec, terms$ID[ids])
+}
+isoforms <- olfr_sct_info[match(unique(isoforms), olfr_sct_info$ID),]
+
+rec <- olfr_sct_info[match(unique(rec), olfr_sct_info$ID),]
+ids <- match(rec$ID, osn_sct_raw[["features"]]$ID)
+rec$Chr <- osn_sct_raw[["features"]]$Chr[ids]
+rec$Strand <- osn_sct_raw[["features"]]$Strand[ids]
+rec$UL <- osn_sct_raw[["features"]]$UTR3[ids]+osn_sct_raw[["features"]]$UTR5[ids]
+for (i in 1:nrow(rec))
+{
+	if (rec$UL[i] != 0) next
+	ids <- which(olfr_info$Gene == rec$Gene[i] & olfr_info$CDS != "")
+	if (length(ids) == 0) print("???")
+	strand <- substr(rec$Gene[i], nchar(rec$Gene[i]), nchar(rec$Gene[i]))
+	ss <- as.numeric(unlist(strsplit(unlist(strsplit(olfr_info$CDS[ids[1]], split="-")), split=";")))
+	exons <- unlist(strsplit(rec$Exon[i], split=";"))
+	cds <- c()
+	if (strand == "+")
+	{
+		ss <- ss[1]
+		for (e in exons)
+		{
+			e <- as.numeric(unlist(strsplit(e, split="-")))
+			if (e[2] < ss) next
+			cds <- c(cds, paste0(max(e[1], ss), "-", e[2]))
+		}
+	} else {
+		ss <- ss[length(ss)]
+		for (e in exons)
+		{
+			e <- as.numeric(unlist(strsplit(e, split="-")))
+			if (e[1] > ss) break
+			cds <- c(cds, paste0(e[1], "-", min(e[2], ss)))
+		}
+	}
+	rec$CDS[i] <- paste0(cds, collapse=";")
+}
+iso_trans_test <- rec
+write.table(isoforms, "oe_iso_info.tsv", sep="\t", quote=F, row.names=F)
+write.table(cells_nano, "oe_olfr_info.tsv", sep="\t", quote=F, row.names=F)
+write.table(iso_trans_test, "oe_iso_trans_test.tsv", sep="\t", quote=F, row.names=F)
+
 ################################################################################
-# None	8205	60.5%
-# Multi	284	2.1%
-# Single	5068	37.4%
-# Total	13557	-
-#cells <- setdiff(names(which(colSums(sce[["RNA"]]$counts[grep("^Olfr", gtf$gene_name[match(rownames(sce), gtf$transcript_id)]), 
-#	intersect(colnames(osn_sct_raw[["trans"]]), colnames(sce))])> 0)), cells_nano$Cell)
-#write.table(cells, "osn_null_test.tsv", row.names=F, col.names=F, quote=F)
-#null_info <- read.delim("osn_null_res.tsv", h=T)
-#null_info_unique <- null_info[which(null_info$type == "unique"),]
-#or_test_ra <- data.frame(Group=rep(c("Detected", "None"), each=3), Type=rep(c("None", "Multi", "Single"), 2), Number=c(5587, 284, 5068, 2618, 0, 0))
-#or_test_ra$Type <- factor(or_test_ra$Type, levels=c("None", "Multi", "Single"))
-#or_test_rb <- data.frame(Type=c("Ambiguous", "Inconsistent", "Intro", "Mono_no_TSS"), Number=c(119425, 37901, 14036, 13726))
-#or_test_rb$Rate <- or_test_rb$Number*100/sum(or_test_rb$Number)
-#or_test_rb$Type <- factor(or_test_rb$Type, levels=or_test_rb$Type)
-#p_ora <- ggplot(or_test_ra, aes(x=Type, y=Number, fill=Group))+geom_bar(stat="identity", width=0.6)+
-#	labs(title=NULL, x="OR types of isoforms", y="Number of cells", fill="OR Gene")+
-#	scale_fill_manual(values=col_list[c(2, 6)], drop=F)+scale_y_continuous(limits=c(0, 8600), expand=c(0, 0))+
-#	geom_text(data=data.frame(Type=c("None", "Multi", "Single"), Number=c(8205, 284, 5068), Group="Detected"), 
-#	aes(x=Type, y=Number+30, label=Number), size=5, vjust=0)+
-#	theme(plot.title=element_text(size=title_size, hjust=0.5), panel.background=element_blank(), 
-#	legend.title=element_text(size=title_size, colour="black"), 
-#	legend.text=element_text(size=text_size, colour="black"), 
-#	legend.key=element_blank(), legend.background=element_blank(), 
-#	axis.ticks.x=element_blank(), axis.ticks.y=element_line(colour="black"), 
-#	axis.text=element_text(size=text_size, colour="black"), axis.title=element_text(size=title_size, colour="black"), 
-#	axis.line=element_line(colour="black"), legend.position=c(0.8, 0.9))
-#p_orb <- ggplot(or_test_rb, aes(y=Type, x=Rate))+geom_bar(stat="identity", width=0.6, fill=col_list[3])+
-#	labs(title=NULL, y=NULL, x="Percentage of OR reads (%)")+scale_x_continuous(expand=c(0, 0))+
-#	theme(plot.title=element_text(size=title_size, hjust=0.5), panel.background=element_blank(), 
-#	legend.title=element_text(size=title_size, colour="black"), 
-#	legend.text=element_text(size=text_size, colour="black"), 
-#	legend.key=element_blank(), legend.background=element_blank(), 
-#	axis.ticks.y=element_blank(), axis.ticks.x=element_line(colour="black"), 
-#	axis.text=element_text(size=text_size, colour="black"), axis.title=element_text(size=title_size, colour="black"), 
-#	axis.line=element_line(colour="black"))
-#ggsave(plot=p_ora+p_orb, width=8, height=5, dpi=200, filename="osn_null_res.png", limitsize=F)
-################################################################################
-isoforms <- rbind(data.frame(read.delim("osn_iso_info.tsv", h=T), Sample="OSN"), data.frame(read.delim("oe_iso_info.tsv", h=T), Sample="OE"))
+isoforms_osn <- data.frame(read.delim("osn_iso_info.tsv", h=T), Sample="OSN")
+isoforms_oe <- data.frame(read.delim("oe_iso_info.tsv", h=T), Sample="OE")
+terms <- intersect(isoforms_osn$Exon, isoforms_oe$Exon)
+terms_osn <- setdiff(isoforms_osn$Exon, isoforms_oe$Exon)
+terms_oe <- setdiff(isoforms_oe$Exon, isoforms_osn$Exon)
+isoforms <- isoforms_osn[match(terms, isoforms_osn$Exon),]
+isoforms$Count <- isoforms$Count + isoforms_oe$Count[match(terms, isoforms_oe$Exon)]
+isoforms$Sample <- "Both"
+isoforms <- rbind(isoforms, rbind(isoforms_osn[match(terms_osn, isoforms_osn$Exon),], isoforms_oe[match(terms_oe, isoforms_oe$Exon),]))
 cells_nano <- rbind(data.frame(read.delim("osn_olfr_info.tsv", h=T), Sample="OSN"), data.frame(read.delim("oe_olfr_info.tsv", h=T), Sample="OE"))
 iso_trans_test <- rbind(data.frame(read.delim("osn_iso_trans_test.tsv", h=T), Sample="OSN"), data.frame(read.delim("oe_iso_trans_test.tsv", h=T), Sample="OE"))
+iso_trans_sub_osn <- data.frame(read.delim("osn_iso_trans_test.tsv", h=T), Sample="OSN")
+iso_trans_sub_osn <- iso_trans_sub_osn[which(iso_trans_sub_osn$TypeC != "-"),]
+trans_test_nmd <- as.data.frame(predictNMD(importGTF("/home/cbh/work/oe_fl_re/osn_iso_trans_test.gtf")))
+iso_trans_sub_osn$stop_to_lastEJ <- trans_test_nmd$stop_to_lastEJ[match(iso_trans_sub_osn$ID, trans_test_nmd$transcript)]
+iso_trans_sub_osn$is_NMD <- trans_test_nmd$is_NMD[match(iso_trans_sub_osn$ID, trans_test_nmd$transcript)]
+motif_info <- read.delim("/mnt/md0/oe_full_length/output/OSNfulllength/iso_trans_test_aa_cal.tsv")
+iso_trans_sub_osn <- cbind(iso_trans_sub_osn, motif_info[match(iso_trans_sub_osn$ID, gsub(".*[+-]_", "", motif_info$Term)), -1])
+iso_trans_sub_oe <- data.frame(read.delim("oe_iso_trans_test.tsv", h=T), Sample="OE")
+iso_trans_sub_oe <- iso_trans_sub_oe[which(iso_trans_sub_oe$TypeC != "-"),]
+trans_test_nmd <- as.data.frame(predictNMD(importGTF("/home/cbh/work/oe_fl_re/oe_iso_trans_test.gtf")))
+iso_trans_sub_oe$stop_to_lastEJ <- trans_test_nmd$stop_to_lastEJ[match(iso_trans_sub_oe$ID, trans_test_nmd$transcript)]
+iso_trans_sub_oe$is_NMD <- trans_test_nmd$is_NMD[match(iso_trans_sub_oe$ID, trans_test_nmd$transcript)]
+motif_info <- read.delim("/mnt/md0/oe_full_length/output/OEfulllength/iso_trans_test_aa_cal.tsv")
+iso_trans_sub_oe <- cbind(iso_trans_sub_oe, motif_info[match(iso_trans_sub_oe$ID, gsub(".*[+-]_", "", motif_info$Term)), -1])
+terms <- intersect(iso_trans_sub_osn$Exon, iso_trans_sub_oe$Exon)
+terms_osn <- setdiff(iso_trans_sub_osn$Exon, iso_trans_sub_oe$Exon)
+terms_oe <- setdiff(iso_trans_sub_oe$Exon, iso_trans_sub_osn$Exon)
+iso_trans_sub <- iso_trans_sub_osn[match(terms, iso_trans_sub_osn$Exon),]
+iso_trans_sub$Count <- iso_trans_sub$Count + iso_trans_sub_oe$Count[match(terms, iso_trans_sub_oe$Exon)]
+iso_trans_sub$Sample <- "Both"
+iso_trans_sub <- rbind(iso_trans_sub, rbind(iso_trans_sub_osn[match(terms_osn, iso_trans_sub_osn$Exon),], iso_trans_sub_oe[match(terms_oe, iso_trans_sub_oe$Exon),]))
+iso_trans_sub$TypeC <- factor(iso_trans_sub$TypeC, levels=c("A5SS", "RI", "A5SS+RI"))
+iso_trans_sub$ID <- paste(iso_trans_sub$ID, iso_trans_sub$Sample)
+write.csv(iso_trans_sub, "iso_trans_sub.csv", row.names=F, quote=F)
 
 rec_aa <- data.frame(table(cells_nano$Num))
 paa <- ggplot(rec_aa, aes(x=Var1, y=Freq))+
@@ -267,11 +369,11 @@ pab <- ggplot(rec_ab, aes(x=4, y=Freq, fill=Var1))+geom_col()+
 	legend.text=element_text(colour="black", size=text_size), plot.margin=margin(-10,-10,-10,-10), panel.spacing=unit(0, "pt"))
 rec_ac <- data.frame(Var1=c("UTR", "CDS"), Freq=c(length(which(isoforms$TypeC == "-")), length(which(isoforms$TypeC != "-"))))
 pac <- ggplot(rec_ac, aes(x=4, y=Freq, fill=Var1))+geom_col()+
-	labs(title="        Isoform types       OSN types", x=NULL, y=NULL, fill=NULL)+
+	labs(title="OSN types        Isoform types", x=NULL, y=NULL, fill=NULL)+
 	geom_text(aes(label=Freq), size=3, position=position_stack(vjust=0.5))+
 	coord_polar(theta="y")+scale_x_continuous(limits=c(2.5, 4.5), expand=c(0, 0)) +
 	scale_fill_manual(values=col_list[c(4,7)])+
-	theme(plot.title=element_text(size=title_size, hjust=0.5), panel.background=element_blank(), 
+	theme(plot.title=element_text(size=title_size, hjust=1.3), panel.background=element_blank(), 
 	panel.grid.major=element_blank(), panel.grid.minor=element_blank(), 
 	legend.position="bottom", legend.direction="vertical", legend.key.size=unit(12, "pt"), 
 	plot.background=element_blank(), axis.line=element_blank(), axis.ticks=element_blank(), 
@@ -290,7 +392,7 @@ pad <- ggplot(rec_ad, aes(x=4, y=Freq, fill=Var1))+geom_col()+
 	plot.background=element_blank(), axis.line=element_blank(), axis.ticks=element_blank(), 
 	axis.text=element_blank(), axis.title=element_blank(), legend.title=element_text(colour="black", size=title_size), 
 	legend.text=element_text(colour="black", size=text_size), plot.margin=margin(-10,-10,-10,-10), panel.spacing=unit(0, "pt"))
-pae <- wrap_plots(list(pab, pac, pad), nrow=1)+theme(plot.margin=margin(-10,-10,-10,-10), panel.spacing=unit(0, "pt"))
+pae <- wrap_plots(list(pad, pab, pac), nrow=1)+theme(plot.margin=margin(-10,-10,-10,-10), panel.spacing=unit(0, "pt"))
 pa <- wrap_elements(paa+inset_element(pae, 0.2, 0.1, 1, 1)+tag_thm)+tag_thm
 
 ids <- which(cells_nano$Sub > 0)
@@ -324,7 +426,7 @@ pacb <- ggplot(rec_bb, aes(x=Cell, y=Rate, fill=Group, color=Group))+geom_bar(st
 	panel.grid.major=element_blank(), panel.grid.minor=element_blank(), plot.margin=margin(3,0,0,0))
 pb <- wrap_elements(ggarrange(paca, pacb, align="v", common.legend=T, legend="top", ncol=1, heights=c(1,3)))+tag_thm
 
-info_col <- col_list[c(2,4,5,6,8)]
+info_col <- col_list[c(2,5,4,6,8)]
 names(info_col) <- c("A3SS", "A5SS", "RI", "SE", "UTR")
 res_mat <- data.frame(matrix(FALSE, nrow=nrow(isoforms), ncol=4, dimnames=list(isoforms$ID, c("A3SS", "A5SS", "RI", "SE"))))
 res_mat$A3SS[grep("A3SS", isoforms$TypeC)] <- TRUE
@@ -356,7 +458,7 @@ pc <- upset(res_mat, colnames(res_mat), name="Overlap", width_ratio=0.25, wrap=T
 	axis.ticks.y=element_line(linewidth=0.35, color="black"))))))+tag_thm
 
 data_raw <- read.delim("or_test_exam.tsv")
-plsb <- lapply(c("A3SS", "A5SS", "RI", "SE"), function(type) {
+plsb <- lapply(c("A3SS", "A5SS", "SE", "RI"), function(type) {
 	ids <- which(data_raw$Type == type)
 	seq_id <- data_raw$Chr[ids[1]]
 	strand <- data_raw$Strand[ids[1]]
@@ -433,19 +535,12 @@ plsb <- lapply(c("A3SS", "A5SS", "RI", "SE"), function(type) {
 })
 pd <- wrap_elements(wrap_plots(plsb, ncol=1)+tag_thm)+tag_thm
 
-iso_trans_sub <- iso_trans_test[which(iso_trans_test$TypeC != "-"),]
-iso_trans_sub$TypeC <- factor(iso_trans_sub$TypeC, levels=c("A5SS", "RI", "A5SS+RI"))
-iso_trans_sub$ID <- paste(iso_trans_sub$ID, iso_trans_sub$Sample)
-data_raw <- rbind(data.frame(read.delim("/mnt/md0/oe_full_length/output/OSNfulllength/iso_trans_test_aa_cal.tsv"), Sample="OSN"), 
-	data.frame(read.delim("/mnt/md0/oe_full_length/output/OEfulllength/iso_trans_test_aa_cal.tsv"), Sample="OE"))
-data_raw$Term <- paste(data_raw$Term, data_raw$Sample)
-data_raw <- data_raw[match(iso_trans_sub$ID, gsub(".*[+-]_", "", data_raw$Term)),]
-ranks <- data.frame(Term=data_raw$Term, ID=iso_trans_sub$ID, Type=iso_trans_sub$TypeC, Rank=0)
-for (i in 2:8) ranks$Rank[which(data_raw[, i] > 40)] <- i
+ranks <- data.frame(ID=iso_trans_sub$ID, Type=iso_trans_sub$TypeC, Rank=0)
+for (i in 19:25) ranks$Rank[which(iso_trans_sub[, i] > 40)] <- i
 ranks <- ranks[order(ranks$Rank),]
 data_df <- data.frame()
-for (i in 2:8) data_df <- rbind(data_df, data.frame(Term=iso_trans_sub$ID, Type=iso_trans_sub$TypeC, 
-	Pos=colnames(data_raw)[i], Rate=data_raw[, i]))
+for (i in 19:25) data_df <- rbind(data_df, data.frame(Term=iso_trans_sub$ID, Type=iso_trans_sub$TypeC, 
+	Pos=colnames(iso_trans_sub)[i], Rate=iso_trans_sub[, i]))
 data_df$Type <- factor(data_df$Type, levels=c("A5SS", "RI", "A5SS+RI"))
 data_df$Term <- factor(data_df$Term, levels=ranks$ID)
 data_df$Rate[which(data_df$Rate > 40)] <- 100
@@ -488,15 +583,28 @@ ptc <- wrap_elements(ggdraw()+draw_image("fig04_f.png", scale=1))+tag_thm
 pf <- wrap_elements(wrap_plots(A=ptc, B=pte, C=ptd, D=ptf, design="A#\nB#\nCD", 
 	heights=c(8,1,20), widths=c(20,1))+plot_layout(guides="collect")+theme(margin(-10,-10,-10,-10)))+tag_thm
 
-pe <- wrap_elements(ggdraw()+draw_image("fig04_e.png", scale=1.05))+theme(plot.tag=element_text(size=title_size, color="black"), 
+pe <- wrap_elements(ggdraw()+draw_image("fig04_e.png", scale=1.05))+
+	theme(plot.tag=element_text(size=title_size, face="bold", color="black"), 
 	plot.margin=margin(-20,-5,0,-20), panel.spacing=unit(0, "pt"), 
 	panel.background=element_rect(fill="transparent", color=NA),  plot.background=element_rect(fill="transparent", color=NA))
+
+pxf <- wrap_elements(ggdraw()+draw_image("aaa.png", scale=1)+tag_thm)+tag_thm
 
 pblank <- wrap_elements(ggplot()+geom_blank()+theme(panel.background=element_blank()))+tag_thm
 ggsave(plot=wrap_plots(list(
 	wrap_elements(wrap_plots(list(pa, pb, pf), nrow=1, widths=c(1.4, 0.9, 1))+
-	plot_annotation(tag_levels=list(c("A", "B", "D")), theme=tag_thm))+tag_thm, 
+	plot_annotation(tag_levels=list(c("A", "B", "E")), theme=tag_thm))+tag_thm, 
 	wrap_elements(wrap_plots(list(pc, pd, pe), nrow=1, widths=c(1.2, 1.2, 1))+
-	plot_annotation(tag_levels=list(c("C", "", "E")), theme=tag_thm))+tag_thm, 
-	pblank), ncol=1, heights=c(1, 1, 2.57)), 
+	plot_annotation(tag_levels=list(c("C", "", "F")), theme=tag_thm))+tag_thm, 
+	wrap_elements(pxf+plot_annotation(tag_levels=list("D"), theme=tag_thm))+tag_thm, 
+	pblank), ncol=1, heights=c(1, 1, 1.07, 1.5)), 
+	width=210, height=297, dpi=300, units="mm", filename="oe_fl_fig_04.png", limitsize=F)
+
+ggsave(plot=wrap_plots(list(
+	wrap_elements(wrap_plots(list(pa, pb, pf), nrow=1, widths=c(1.4, 0.9, 1))+
+	plot_annotation(tag_levels=list(c("A", "B", "E")), theme=tag_thm))+tag_thm, 
+	wrap_elements(wrap_plots(list(pc, pd, pe), nrow=1, widths=c(1.2, 1.2, 1))+
+	plot_annotation(tag_levels=list(c("C", "", "F")), theme=tag_thm))+tag_thm, 
+	wrap_elements(pxf+plot_annotation(tag_levels=list("D"), theme=tag_thm))+tag_thm, 
+	pblank), ncol=1, heights=c(1, 1, 1.07, 1.5)), 
 	width=210, height=297, dpi=300, units="mm", filename="oe_fl_fig_04.pdf", limitsize=F)

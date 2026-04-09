@@ -129,7 +129,7 @@ pc <- wrap_elements(wrap_plots(A=pca, B=pcb, C=pcc, design="CA\n#B", widths=c(1,
 sce_rna$cell.subtype_fix <- factor(sce_rna$cell.subtype_fix, levels=types)
 rec_da <- data.frame(X=sce_rna@reductions$umap@cell.embeddings[,2], 
 	Y=-sce_rna@reductions$umap@cell.embeddings[,1], Type=sce_rna$cell.subtype_fix)
-pda <- ggplot(rec_da, aes(x=X, y=Y, color=Type))+geom_point(size=1)+
+pda <- ggplot(rec_da, aes(x=X, y=Y, color=Type))+geom_point(size=0.1)+
 	labs(title="Identified with illumina", x="UMAP1", y="UMAP2", colour="Type")+
 	scale_color_manual(values=cell_col, drop=F)+
 	guides(colour=guide_legend(ncol=2, override.aes=list(size=3), reverse=T))+
@@ -150,7 +150,7 @@ pda <- ggplot(rec_da, aes(x=X, y=Y, color=Type))+geom_point(size=1)+
 #	Y=-sce_rna@reductions$umap@cell.embeddings[,1], Type=sce_rna$cell.subtype_nano)
 rec_db <- data.frame(Y=sce_nano@reductions$umap@cell.embeddings[,2], 
 	X=sce_nano@reductions$umap@cell.embeddings[,1], Type=sce_nano$cell.subtype_fix)
-pdb <- ggplot(rec_db, aes(x=X, y=Y, color=Type))+geom_point(size=1)+
+pdb <- ggplot(rec_db, aes(x=X, y=Y, color=Type))+geom_point(size=0.1)+
 	labs(title="Identified with nanopore", x="UMAP1", y="UMAP2", colour="Type")+
 	scale_color_manual(values=cell_col, drop=F)+
 	guides(color=guide_legend(ncol=2, override.aes=list(size=3), reverse=T))+
@@ -283,7 +283,18 @@ ggsave(plot=wrap_plots(list(
 	wrap_elements(pd+plot_annotation(tag_levels=list(c("D")), theme=tag_thm)+tag_thm)+tag_thm, 
 	wrap_elements(pe+plot_annotation(tag_levels=list(c("E")), theme=theme(plot.margin=margin(-10, -3, 0, -3)))+tag_thm)+tag_thm, 
 	pblank), ncol=1, heights=c(2.5, 3, 4, 4, 2.8))+tag_thm, 
+	width=210, height=297, dpi=300, units="mm", filename="oe_fl_fig_01.png", limitsize=F)
+
+ggsave(plot=wrap_plots(list(
+	wrap_elements(pp+plot_annotation(tag_levels=list(c("A")), theme=tag_thm)+tag_thm)+tag_thm, 
+	wrap_elements(wrap_plots(list(pa, pb, pc), nrow=1, widths=c(1, 1, 1.1))+
+	plot_annotation(tag_levels=list(c("B", "C", "F")), theme=tag_thm)+tag_thm)+tag_thm, 
+	wrap_elements(pd+plot_annotation(tag_levels=list(c("D")), theme=tag_thm)+tag_thm)+tag_thm, 
+	wrap_elements(pe+plot_annotation(tag_levels=list(c("E")), theme=theme(plot.margin=margin(-10, -3, 0, -3)))+tag_thm)+tag_thm, 
+	pblank), ncol=1, heights=c(2.5, 3, 4, 4, 2.8))+tag_thm, 
 	width=210, height=297, dpi=300, units="mm", filename="oe_fl_fig_01.pdf", limitsize=F)
+
+
 
 
 

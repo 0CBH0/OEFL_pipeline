@@ -126,7 +126,7 @@ data_raw$close_all()
 rec_aa <- data.frame(X=osn_rna@reductions$umap@cell.embeddings[,1], 
 	Y=osn_rna@reductions$umap@cell.embeddings[,2], Type=osn_rna$cell.subtype_fix)
 rec_aa$Type <- factor(rec_aa$Type, levels=rev(types))
-paa <- ggplot(rec_aa, aes(x=X, y=Y, color=Type))+geom_point(size=0.8)+
+paa <- ggplot(rec_aa, aes(x=X, y=Y, color=Type))+geom_point(size=0.1)+
 	labs(title=NULL, x="UMAP1", y="UMAP2", colour=NULL)+
 	scale_color_manual(values=brewer.pal(9,"YlGnBu")[c(9,8,7,6,5)], drop=F)+
 	guides(colour=guide_legend(override.aes=list(size=3)))+
@@ -294,32 +294,74 @@ for (t in rownames(rec_tt))
 	}
 }
 names(info_exons) <- c("seqnames", "start", "end", "strand", "type", "transcript_name", "gene_name")
+info_exon_ids <- unique(info_exons[which(info_exons$type == "exon"), c("start", "end")])
+info_exon_ids <- info_exon_ids[order(info_exon_ids$start, info_exon_ids$end),]
+info_exon_ids$exon_id <- seq_len(nrow(info_exon_ids))
+info_exons <- left_join(info_exons, info_exon_ids, by=c("start", "end"))
 #for (t in 2:nrow(info_exons)) if (info_exons$start[t] == info_exons$end[t-1]) info_exons$start[t] <- info_exons$end[t-1] + 1
 info_exons <- info_exons[order(info_exons$type, decreasing=T),]
 info_exons <- info_exons[order(info_exons$end),]
 info_exons <- info_exons[order(info_exons$start),]
 info_exons <- info_exons[order(info_exons$transcript_name),]
 info_exons <- info_exons[which(info_exons$end - info_exons$start > 0),]
-#info_ranges <- paste0(info_exons$seqnames[1], strand, ":", min(info_exons$start), "-", max(info_exons$start))
 info_ranges <- paste0(info_exons$seqnames[1], strand, ":", min(info_exons$start), "-", max(info_exons$start))
 info_exons <- shorten_gaps(exons=info_exons, introns=to_intron(info_exons, "transcript_name"), group_var="transcript_name")
-info_introns <- info_exons[which(info_exons$type == "intron"),]
-info_utrs <- info_exons[which(info_exons$type == "UTR"),]
-info_exons <- info_exons[which(info_exons$type == "exon"),]
+info_introns <- as.data.frame(info_exons[which(info_exons$type == "intron"),])
+info_utrs <- as.data.frame(info_exons[which(info_exons$type == "UTR"),])
+info_exons <- as.data.frame(info_exons[which(info_exons$type == "exon"),])
 info_introns$transcript_name <- factor(info_introns$transcript_name, levels=rownames(rec_tt))
 info_exons$transcript_name <- factor(info_exons$transcript_name, levels=rownames(rec_tt))
 info_utrs$transcript_name <- factor(info_utrs$transcript_name, levels=rownames(rec_tt))
+info_introns$transcript_y <- as.numeric(info_introns$transcript_name)
+info_exons$transcript_y <- as.numeric(info_exons$transcript_name)
+info_utrs$transcript_y <- as.numeric(info_utrs$transcript_name)
+info_exon_labels <- info_exons[which(info_exons$exon_id %in% c(9:25)), , drop=F]
+info_exon_labels <- info_exon_labels[order(info_exon_labels$transcript_y, info_exon_labels$exon_id, 
+	info_exon_labels$start, info_exon_labels$end), , drop=FALSE]
+info_exon_labels <- info_exon_labels[!duplicated(paste(info_exon_labels$transcript_name, 
+	info_exon_labels$exon_id, sep="_")), , drop=FALSE]
+info_exon_labels$mid <- (info_exon_labels$start + info_exon_labels$end) / 2
+info_exon_labels$label <- info_exon_labels$exon_id
+info_exon_labels$anchor_y <- info_exon_labels$transcript_y - 0.17
+
+spread_label_x <- function(x, min_sep=820)
+{
+	if (length(x) <= 1) return(x)
+	ord <- order(x)
+	x_sorted <- x[ord]
+	x_spread <- x_sorted
+	for (i in 2:length(x_spread)) if (x_spread[i] - x_spread[i-1] < min_sep) x_spread[i] <- x_spread[i-1] + min_sep
+	x_spread <- x_spread - median(x_spread - x_sorted)
+	for (i in 2:length(x_spread)) if (x_spread[i] - x_spread[i-1] < min_sep) x_spread[i] <- x_spread[i-1] + min_sep
+	out <- x
+	out[ord] <- x_spread
+	return(out)
+}
+info_exon_labels$label_x <- info_exon_labels$mid
+for (tx in levels(info_exons$transcript_name))
+{
+	tx_ids <- which(info_exon_labels$transcript_name == tx)
+	if (length(tx_ids) > 0) info_exon_labels$label_x[tx_ids] <- spread_label_x(info_exon_labels$mid[tx_ids])
+}
+info_exon_labels$label_y <- info_exon_labels$transcript_y - 0.38
+info_exon_labels$segment_yend <- info_exon_labels$label_y + 0.03
+	label_layers <- list(
+		geom_segment(data=info_exon_labels, aes(x=mid, xend=label_x, y=anchor_y, yend=segment_yend, color=transcript_name), 
+			linewidth=0.24, lineend="round", show.legend=FALSE),
+		geom_text(data=info_exon_labels, aes(x=label_x, y=label_y, label=label, color=transcript_name), 
+			size=1.5, fontface="bold", vjust=1, show.legend=FALSE))
 info_col <- rev(col_list[c(1:(nrow(rec_tt)))+5])
 names(info_col) <- rownames(rec_tt)
-ppb <- ggplot(info_exons, aes(xstart=start, xend=end, y=transcript_name))+
+ppb <- ggplot(info_exons, aes(xstart=start, xend=end, y=transcript_y))+
 	geom_intron(data=info_introns, aes(color=transcript_name, strand=strand), linewidth=0.5, arrow.min.intron.length=300)+
 	geom_range(aes(fill=transcript_name, color=transcript_name), linewidth=0, height=0.3)+
-	geom_range(data=info_utrs, mapping=aes(xstart=start, xend=end, y=transcript_name, fill=transcript_name, 
+	geom_range(data=info_utrs, mapping=aes(xstart=start, xend=end, y=transcript_y, fill=transcript_name, 
 	color=transcript_name), linewidth=0, height=0.1)+
 	labs(title=NULL, x=NULL, y=NULL)+
-	scale_y_discrete(expand=expansion(mult=c(0.1,0.23)))+
+	scale_y_continuous(breaks=seq_len(nrow(rec_tt)), labels=rownames(rec_tt), expand=expansion(mult=c(0.05,0.08)))+
 	scale_x_continuous(breaks=(max(c(info_exons$end, info_utrs$end))+min(c(info_exons$start, info_utrs$start)))/2, labels=gene)+
-	geom_text(aes(y=transcript_name, label=transcript_name, color=transcript_name), x=0, hjust=0, vjust=0, nudge_y=0.3, size=2.6)+
+	geom_text(aes(y=transcript_y, label=transcript_name, color=transcript_name), x=0, hjust=0, vjust=0, nudge_y=0.3, size=2.3)+
+	label_layers+
 	scale_fill_manual(values=info_col, drop=F)+scale_color_manual(values=info_col, drop=F)+
 	theme(panel.border=element_rect(color="black", fill=NA, linewidth=0.4), panel.background=element_blank(), 
 	axis.line=element_blank(), axis.title=element_blank(), axis.ticks=element_blank(), axis.text.y=element_blank(), 
@@ -331,13 +373,14 @@ ppp <- ggplot(rec_ppp, aes(y=1, x=Type, fill=Type))+geom_bar(stat="identity", wi
 	scale_fill_manual(values=as.character(col_types[c("HBC", "GBC", "INP", "iOSN", "mOSN")]))+
 	scale_x_discrete(expand=c(0, 0))+scale_y_continuous(expand=c(0, 0))+
 	theme(legend.position="none", panel.background=element_blank(), axis.title.y=element_blank(), 
-	axis.title.x=element_text(size=title_size, colour="black", hjust=-1), 
+	axis.title.x=element_text(size=title_size, colour="black", hjust=-0.5), 
 	axis.text.y=element_blank(), axis.text.x=element_text(size=text_size, colour="black"), 
 	axis.ticks=element_blank())+tag_thm
 pad <- wrap_elements(wrap_plots(A=ppa, B=ppb, C=ppp, design=c("AB\nCB"), heights=c(40, 1))+
 	plot_annotation(NULL, theme=theme(plot.title=element_text(size=title_size, colour="black", hjust=0.5), 
 	plot.margin=margin(0,0,-32,0), panel.spacing=unit(0, "pt"))))+tag_thm
 
+####################################################################################
 ics <- which(osn_sct_raw[["features"]]$Type == "NOVEL_IC")
 ncs <- which(osn_sct_raw[["features"]]$Type == "NOVEL_NC")
 #terms <- unique(osn_sct_raw[["features"]]$Gene[c(ics, ncs)])
@@ -565,51 +608,6 @@ pbb <- ggplot(deg_info, aes(x=X, y=Y, color=Group))+geom_point(size=2)+
 	axis.line=element_line(linewidth=0.35, color="black"), axis.ticks=element_line(linewidth=0.35, color="black"), 
 	legend.position=c(0.8, 0.83))+tag_thm
 
-#ego_total <- data.frame()
-#for (type in c("Increased", "Decreased"))
-#{
-#	terms <- deg_info$Symbol[which(deg_info$Group == type)]
-#	eid <- mapIds(org.Mm.eg.db, keys=terms, column="ENTREZID", keytype="SYMBOL", multiVals="first")
-#	ego <- enrichGO(gene=eid, keyType="ENTREZID", OrgDb=org.Mm.eg.db, ont="BP", pAdjustMethod="BH", readable=T)
-#	ego <- ego@result[which((ego@result$pvalue < 0.01 | ego@result$qvalue < 0.05) & ego@result$Count > 1),]
-#	if (nrow(ego) == 0) next
-#	ego_id <- data.frame(ID=ego$ID, level=0)
-#	id_filtered <- c()
-#	for (i in 1:nrow(ego_id))
-#	{
-#		if (!is.na(match(ego_id$ID[i], id_filtered))) next
-#		rec <- as.character(unlist(mget(ego_id$ID[i], GOBPPARENTS, ifnotfound=NA)))
-#		parents <- rec
-#		level <- 0
-#		while(length(parents) > 0)
-#		{
-#			parents_ori <- parents
-#			parents <- c()
-#			for (p in parents_ori)
-#			{
-#				if (p == "all" & ego_id$level[i] == 0) ego_id$level[i] <- level
-#				if (is.na(p) | p == "all") next
-#				rec <- c(rec, p)
-#				parents <- c(parents, as.character(unlist(mget(p, GOBPPARENTS, ifnotfound=NA))))
-#			}
-#			level <- level + 1
-#			parents <- unique(parents)
-#		}
-#		rec <- unique(rec)
-#		rec <- which(!is.na(match(ego_id$ID, rec)))
-#		if (length(rec) > 0) id_filtered <- c(id_filtered, ego_id$ID[rec])
-#	}
-#	ego_id$level[match(unique(id_filtered), ego_id$ID)] <- 0
-#	if (length(which(ego_id$level > 2)) == 0) next
-#	ego_id <- ego_id[which(ego_id$level > 2),, drop=F]
-#	ego <- ego[match(ego_id$ID, ego$ID),, drop=F]
-#	ego$Level <- ego_id$level
-#	ego$Type <- type
-#	ego <- ego[order(ego$pvalue),]
-#	ego <- ego[order(ego$Count, decreasing=T),]
-#	ego_total <- rbind(ego_total, ego)
-#}
-
 gene <- "Stoml3"
 lims <- c(320, 700, 1100)
 term <- deg_info$Term[which(deg_info$Symbol == gene)]
@@ -835,7 +833,9 @@ plds <- lapply(genes, function (gene) {
 		cells <- which(osn_rna$cell.subtype_fix == types[i])
 		rec_tt[, i] <- rowSums(osn_sct_raw[["trans"]][ids, cells])*cell_num/length(cells)
 	}
-	rec_tt <- rec_tt[which(rowMaxs(rec_tt) > 1),]
+	tt_limit <- 1
+	if (gene == "Eef1d") tt_limit <- 4
+	rec_tt <- rec_tt[which(rowMaxs(rec_tt) > tt_limit),]
 	isoforms <- rownames(rec_tt)
 	#for (i in 1:5) rec_tt[, i] <- rec_tt[, i]*100/sum(rec_tt[, i])
 	rec_ttt <- data.frame()
@@ -972,15 +972,15 @@ plds <- lapply(genes, function (gene) {
 		scale_x_continuous(breaks=(max(c(info_exons$end, info_utrs$end))+min(c(info_exons$start, info_utrs$start)))/2, 
 		labels=gene, expand=c(0.01, 0.01))+
 		geom_text(aes(y=transcript_name, label=transcript_name, color=transcript_name), 
-		x=min(density_regions$is), hjust=0, vjust=0, nudge_y=0.3, size=2.6)+
+		x=min(density_regions$is), hjust=0, vjust=0, nudge_y=0.3, size=2.3)+
 		scale_fill_manual(values=info_col, drop=F)+scale_color_manual(values=info_col, drop=F)+
 		theme(panel.border=element_rect(color="black", fill=NA, linewidth=0.4), panel.background=element_blank(), 
 		axis.line=element_blank(), axis.title=element_blank(), axis.ticks=element_blank(), axis.text.y=element_blank(), 
 		axis.text.x=element_text(size=text_size, colour="black", vjust=0.5), legend.position="none")+tag_thm
 	rec_ppp <- data.frame(Type=unique(rec_ttt$Type), Info="Line")
 	rec_ppp$Type <- factor(rec_ppp$Type, levels=unique(rec_ttt$Type))
-	gene_hjust = -10
-	if (gene == "Cxadr") gene_hjust = 55
+	gene_hjust = -2
+	if (gene == "Cxadr") gene_hjust = -3
 	pccb <- ggplot(rec_ppp, aes(y=1, x=Type, fill=Type))+geom_bar(stat="identity", width=0.32)+
 		theme_minimal()+labs(title=NULL, y=NULL, x=info_ranges, fill=NULL)+
 		scale_fill_manual(values=col_types[unique(rec_ttt$Type)])+
@@ -990,7 +990,7 @@ plds <- lapply(genes, function (gene) {
 		axis.text.y=element_blank(), axis.text.x=element_text(size=text_size, color="black"), 
 		axis.ticks=element_blank())+tag_thm
 	pccd <- ggplot(rec_ppp, aes(x=1, y=Type, fill=Type))+geom_tile()+
-		theme_minimal()+labs(title=NULL, y=NULL, x=info_ranges, fill=NULL)+
+		theme_minimal()+labs(title=NULL, y=NULL, x=NULL, fill=NULL)+
 		scale_fill_manual(values=rev(as.character(col_types[unique(rec_ttt$Type)])))+
 		scale_x_discrete(expand=c(0, 0))+scale_y_discrete(expand=c(0, 0))+
 		theme(legend.position="none", panel.background=element_blank(), 
@@ -1002,22 +1002,7 @@ plds <- lapply(genes, function (gene) {
 		heights=c(40, 1))+plot_annotation(NULL, theme=theme(plot.margin=margin(0,0,-32,10), panel.spacing=unit(0, "pt"))))+tag_thm)
 })
 
-pblank <- wrap_elements(ggplot()+geom_blank()+theme(panel.background=element_blank()))+tag_thm
-ggsave(plot=wrap_plots(list(
-	wrap_elements(wrap_plots(list(paa,pab,pac,pad), nrow=1, widths=c(0.8,0.6,0.6,1.5))+
-	plot_annotation(tag_levels=list(c("A", "B", "C", "D")), theme=tag_thm))+tag_thm, 
-	wrap_elements(wrap_plots(list(pba,pbb,pbc), nrow=1, widths=c(1, 1, 1))+
-	plot_annotation(tag_levels=list(c("E", "", "F", "G")), theme=tag_thm))+tag_thm, 
-	wrap_elements(wrap_plots(list(pcaa, pcab, plds[[1]]), nrow=1, widths=c(1, 1, 2))+
-	plot_annotation(tag_levels=list(c("H", "", "K")), theme=tag_thm))+tag_thm, 
-	wrap_elements(wrap_plots(list(pda,pdb, plds[[2]]), nrow=1, widths=c(1, 1, 2))+
-	plot_annotation(tag_levels=list(c("I", "J", "L")), theme=tag_thm))+tag_thm, 
-	pblank), ncol=1, heights=c(1,1,1,1,1.25)), 
-	width=210, height=297, dpi=300, units="mm", filename="oe_fl_fig_02.pdf", limitsize=F)
-
-
-
-#cmp_raw_filter <- rec_ca[which(rec_ca$Group != "N.S."),]
+#cmp_raw_filter <- read.csv("cmp_res_raw_filter.csv", h=T, r=1)
 #ego_total <- data.frame()
 #for (type in 1:4)
 #{
@@ -1065,3 +1050,27 @@ ggsave(plot=wrap_plots(list(
 #}
 #write.csv(ego_total, "cmp_raw_go2.csv")
 
+pblank <- wrap_elements(ggplot()+geom_blank()+theme(panel.background=element_blank()))+tag_thm
+ggsave(plot=wrap_plots(list(
+	wrap_elements(wrap_plots(list(paa,pab,pac,pad), nrow=1, widths=c(0.8,0.6,0.6,1.5))+
+	plot_annotation(tag_levels=list(c("A", "B", "C", "D")), theme=tag_thm))+tag_thm, 
+	wrap_elements(wrap_plots(list(pba,pbb,pbc), nrow=1, widths=c(1, 1, 1))+
+	plot_annotation(tag_levels=list(c("E", "", "F", "G")), theme=tag_thm))+tag_thm, 
+	wrap_elements(wrap_plots(list(pcaa, pcab, plds[[1]]), nrow=1, widths=c(1, 1, 2))+
+	plot_annotation(tag_levels=list(c("H", "", "K")), theme=tag_thm))+tag_thm, 
+	wrap_elements(wrap_plots(list(pda,pdb, plds[[2]]), nrow=1, widths=c(1, 1, 2))+
+	plot_annotation(tag_levels=list(c("I", "J", "L")), theme=tag_thm))+tag_thm, 
+	pblank), ncol=1, heights=c(1,1,1,1,1.25)), 
+	width=210, height=297, dpi=300, units="mm", filename="oe_fl_fig_02.png", limitsize=F)
+
+ggsave(plot=wrap_plots(list(
+	wrap_elements(wrap_plots(list(paa,pab,pac,pad), nrow=1, widths=c(0.8,0.6,0.6,1.5))+
+	plot_annotation(tag_levels=list(c("A", "B", "C", "D")), theme=tag_thm))+tag_thm, 
+	wrap_elements(wrap_plots(list(pba,pbb,pbc), nrow=1, widths=c(1, 1, 1))+
+	plot_annotation(tag_levels=list(c("E", "", "F", "G")), theme=tag_thm))+tag_thm, 
+	wrap_elements(wrap_plots(list(pcaa, pcab, plds[[1]]), nrow=1, widths=c(1, 1, 2))+
+	plot_annotation(tag_levels=list(c("H", "", "K")), theme=tag_thm))+tag_thm, 
+	wrap_elements(wrap_plots(list(pda,pdb, plds[[2]]), nrow=1, widths=c(1, 1, 2))+
+	plot_annotation(tag_levels=list(c("I", "J", "L")), theme=tag_thm))+tag_thm, 
+	pblank), ncol=1, heights=c(1,1,1,1,1.25)), 
+	width=210, height=297, dpi=300, units="mm", filename="oe_fl_fig_02.pdf", limitsize=F)

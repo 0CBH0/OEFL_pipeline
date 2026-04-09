@@ -17,6 +17,7 @@ library(SeuratWrappers)
 library(extrafont)
 library(org.Mm.eg.db)
 library(GO.db)
+source("GeomBarSignif.R")
 options(stringsAsFactors=FALSE)
 
 col_list <- c(c("#46998b", "#847acc", "#ef8560", "#6994b3", "#d1934b", "#8fb350", "#de9cba", "#7b469e", 
@@ -29,45 +30,24 @@ tag_thm <- theme(plot.tag=element_text(size=title_size, face="bold", color="blac
 	legend.box.spacing=unit(0, "pt"))
 
 osn_rna <- readRDS("osn_rna2.rds")
-#types <- names(table(osn_rna[["cell.cls"]][,1]))
-#types <- lapply(types, function(x){FindMarkers(osn_rna, ident.1=x, group.by="cell.cls")})
-#names(types) <- names(table(osn_rna[["cell.cls"]][,1]))
-#for (i in 1:length(types)) types[[i]] <- types[[i]][which(types[[i]]$p_val_adj < 0.01 & types[[i]]$avg_log2FC > 0.1),]
-#for (i in 1:length(types)) types[[i]] <- types[[i]][order(types[[i]]$avg_log2FC, decreasing=T),]
-#for (i in 1:length(types)) types[[i]] <- types[[i]][order(types[[i]]$p_val_adj),]
 osn_rna$cell.subtype_fix <- "mOSN"
 osn_rna$cell.subtype_fix[which(osn_rna$cell.cls == 36)] <- "iOSN"
 osn_rna$cell.subtype_fix[which(osn_rna$cell.cls == 39)] <- "iOSN"
 osn_rna$cell.subtype_fix[which(osn_rna$cell.cls == 40)] <- "Basophil"
 osn_rna$cell.subtype_fix[which(osn_rna$cell.cls == 41)] <- "Basophil"
 osn_rna$cell.subtype_fix[which(osn_rna$cell.cls == 42)] <- "Basophil"
-#ggsave(plot=UMAPPlot(osn_rna, group.by="cell.subtype_fix", pt.size=1.2, label=T, label.size=5)+
-#	labs(title=NULL, x="UMAP1", y="UMAP2", color="Type"), width=10, height=8, dpi=200, "test.png")
 
 types <- c("Basophil", "iOSN", "mOSN")
 cell_col <- col_list[1:length(types)]
 names(cell_col) <- types
 
 osn_nano <- readRDS("osn_nano.rds")
-#types <- names(table(osn_nano[["cell.cls"]][,1]))
-#types <- lapply(types, function(x){FindMarkers(osn_nano, ident.1=x, group.by="cell.cls")})
-#names(types) <- names(table(osn_nano[["cell.cls"]][,1]))
-#for (i in 1:length(types)) types[[i]] <- types[[i]][which(types[[i]]$p_val_adj < 0.01 & types[[i]]$avg_log2FC > 0.1),]
-#for (i in 1:length(types)) types[[i]] <- types[[i]][order(types[[i]]$avg_log2FC, decreasing=T),]
-#for (i in 1:length(types)) types[[i]] <- types[[i]][order(types[[i]]$p_val_adj),]
-#table(osn_rna$cell.cls[match(colnames(osn_nano)[which(osn_nano$cell.cls == 30)], colnames(osn_rna))]) # 36
-#table(osn_rna$cell.cls[match(colnames(osn_nano)[which(osn_nano$cell.cls == 33)], colnames(osn_rna))]) # xxx
-#table(osn_rna$cell.cls[match(colnames(osn_nano)[which(osn_nano$cell.cls == 36)], colnames(osn_rna))]) # 39
-#table(osn_rna$cell.cls[match(colnames(osn_nano)[which(osn_nano$cell.cls == 38)], colnames(osn_rna))]) # 40 42
-#table(osn_rna$cell.cls[match(colnames(osn_nano)[which(osn_nano$cell.cls == 39)], colnames(osn_rna))]) # 41
 osn_nano$cell.subtype_fix <- "mOSN"
 osn_nano$cell.subtype_fix[which(osn_nano$cell.cls == 30)] <- "iOSN"
 osn_nano$cell.subtype_fix[which(osn_nano$cell.cls == 33)] <- "iOSN"
 osn_nano$cell.subtype_fix[which(osn_nano$cell.cls == 36)] <- "iOSN"
 osn_nano$cell.subtype_fix[which(osn_nano$cell.cls == 38)] <- "Basophil"
 osn_nano$cell.subtype_fix[which(osn_nano$cell.cls == 39)] <- "Basophil"
-#ggsave(plot=UMAPPlot(osn_nano, group.by="cell.subtype_fix", pt.size=1.2, label=T, label.size=5)+
-#	labs(title=NULL, x="UMAP1", y="UMAP2", color="Type"), width=10, height=8, dpi=200, "test.png")
 
 cs_info <- data.frame(osn_rna@meta.data)
 pa <- wrap_elements(ggplot(cs_info, aes(x="Term", y=nFeature_RNA))+geom_violin(fill=col_list[1], color=col_list[1])+
@@ -132,7 +112,7 @@ pg <- ggplot(cell_info, aes(x="Term", y=Isoform))+geom_violin(fill=col_list[1], 
 osn_rna$cell.subtype_fix <- factor(osn_rna$cell.subtype_fix, levels=types)
 rec_da <- data.frame(X=osn_rna@reductions$umap@cell.embeddings[,2], 
 	Y=-osn_rna@reductions$umap@cell.embeddings[,1], Type=osn_rna$cell.subtype_fix)
-pda <- ggplot(rec_da, aes(x=X, y=Y, color=Type))+geom_point(size=1)+
+pda <- ggplot(rec_da, aes(x=X, y=Y, color=Type))+geom_point(size=0.1)+
 	labs(title="Identified with illumina", x=NULL, y="UMAP2", color=NULL)+
 	scale_color_manual(values=cell_col, drop=F)+
 	guides(color=guide_legend(nrow=1, override.aes=list(size=3), reverse=T))+
@@ -150,7 +130,7 @@ pda <- ggplot(rec_da, aes(x=X, y=Y, color=Type))+geom_point(size=1)+
 osn_nano$cell.subtype_fix <- factor(osn_nano$cell.subtype_fix, levels=types)
 rec_db <- data.frame(Y=osn_nano@reductions$umap@cell.embeddings[,2], 
 	X=osn_nano@reductions$umap@cell.embeddings[,1], Type=osn_nano$cell.subtype_fix)
-pdb <- ggplot(rec_db, aes(x=X, y=Y, color=Type))+geom_point(size=1)+
+pdb <- ggplot(rec_db, aes(x=X, y=Y, color=Type))+geom_point(size=0.1)+
 	labs(title="Identified with nanopore", x="UMAP1", y="UMAP2", color=NULL)+
 	scale_color_manual(values=cell_col, drop=F)+
 	guides(color=guide_legend(nrow=1, override.aes=list(size=3), reverse=T))+
@@ -189,53 +169,6 @@ pca <- ggplot(rec_c, aes(x=X, y=Y, fill=Val))+geom_tile()+
 	legend.title=element_text(size=title_size, color="black"), 
 	legend.text=element_text(size=text_size, color="black"))+tag_thm
 
-#cmp_vdv_raw <- read.csv("cmp_vdv_filter3.csv", h=T, r=1)
-#cmp_vap_raw <- read.csv("cmp_vap_filter3.csv", h=T, r=1)
-#for (type in c("A > P", "D > V"))
-#{
-#	terms <- cmp_vap_raw$Symbol[which(cmp_vap_raw$Group == "IDG")]
-#	if (type == "D > V") terms <- cmp_vdv_raw$Symbol[which(cmp_vdv_raw$Group == "IDG")]
-#	eid <- mapIds(org.Mm.eg.db, keys=terms, column="ENTREZID", keytype="SYMBOL", multiVals="first")
-#	ego <- enrichGO(gene=eid, keyType="ENTREZID", OrgDb=org.Mm.eg.db, ont="BP", pAdjustMethod="BH", readable=T)
-#	ego <- ego@result[which((ego@result$pvalue < 0.01 | ego@result$qvalue < 0.05) & ego@result$Count > 1),]
-#	if (nrow(ego) == 0) next
-#	ego_id <- data.frame(ID=ego$ID, level=0)
-#	id_filtered <- c()
-#	for (i in 1:nrow(ego_id))
-#	{
-#		if (!is.na(match(ego_id$ID[i], id_filtered))) next
-#		rec <- as.character(unlist(mget(ego_id$ID[i], GOBPPARENTS, ifnotfound=NA)))
-#		parents <- rec
-#		level <- 0
-#		while(length(parents) > 0)
-#		{
-#			parents_ori <- parents
-#			parents <- c()
-#			for (p in parents_ori)
-#			{
-#				if (p == "all" & ego_id$level[i] == 0) ego_id$level[i] <- level
-#				if (is.na(p) | p == "all") next
-#				rec <- c(rec, p)
-#				parents <- c(parents, as.character(unlist(mget(p, GOBPPARENTS, ifnotfound=NA))))
-#			}
-#			level <- level + 1
-#			parents <- unique(parents)
-#		}
-#		rec <- unique(rec)
-#		rec <- which(!is.na(match(ego_id$ID, rec)))
-#		if (length(rec) > 0) id_filtered <- c(id_filtered, ego_id$ID[rec])
-#	}
-#	ego_id$level[match(unique(id_filtered), ego_id$ID)] <- 0
-#	if (length(which(ego_id$level > 2)) == 0) next
-#	ego_id <- ego_id[which(ego_id$level > 2),, drop=F]
-#	ego <- ego[match(ego_id$ID, ego$ID),, drop=F]
-#	ego$Level <- ego_id$level
-#	ego$Type <- type
-#	ego <- ego[order(ego$pvalue),]
-#	ego <- ego[order(ego$Count, decreasing=T),]
-#	if (type == "D > V") write.csv(ego, "cmp_dv_raw_go2.csv")
-#	if (type == "A > P") write.csv(ego, "cmp_ap_raw_go2.csv")
-#}
 ego_ap <- read.csv("cmp_ap_raw_go2.csv", r=1, h=T)
 ego_dv <- read.csv("cmp_dv_raw_go2.csv", r=1, h=T)
 ego_total <- rbind(ego_dv[1:min(nrow(ego_dv), 10),], ego_ap[1:min(nrow(ego_ap), 10),])
@@ -258,6 +191,82 @@ pga <- wrap_elements(ggplot(ego_total, aes(x=Count, y=Rank, colour=pvalue, size=
 	panel.spacing=unit(5, "pt"), panel.grid.major=element_blank(), panel.grid.minor=element_blank(), 
 	axis.line=element_blank(), panel.background=element_rect(fill='gray98')))+tag_thm
 
+cmp_raw_diff <- read.csv("cmp_res_raw_filter.csv", r=1, h=T)
+res_l <- data.frame(Group="Differentiation", Diff=cmp_raw_diff$Diff*100)
+cmp_vdv_raw <- read.csv("cmp_vdv_filter3.csv", h=T, r=1)
+res_l <- rbind(res_l, data.frame(Group="D-V projection", Diff=cmp_vdv_raw$Diff[which(cmp_vdv_raw$Group == "IDG")]))
+cmp_vap_raw <- read.csv("cmp_vap_filter3.csv", h=T, r=1)
+res_l <- rbind(res_l, data.frame(Group="A-P projection", Diff=cmp_vap_raw$Diff[which(cmp_vap_raw$Group == "IDG")]))
+res_l <- res_l[which(!is.na(res_l$Diff)),]
+res_l <- res_l[which(res_l$Diff != 100),]
+res_l$Group <- factor(res_l$Group, levels=c("Differentiation", "D-V projection", "A-P projection"), 
+	labels=c(paste0("Differentiation\n(n=", nrow(cmp_raw_diff), ")"), 
+	paste0("D-V projection\n(n=", length(which(cmp_vdv_raw$Group == "IDG")),")"), 
+	paste0("A-P projection\n(n=", length(which(cmp_vap_raw$Group == "IDG")), ")")))
+pll <- wrap_elements(ggplot(res_l, aes(x=Group, y=Diff, fill=Group, color=Group))+geom_violin()+
+	geom_boxplot(width=0.2, outlier.alpha=0, fill="white")+scale_y_continuous()+
+	scale_x_discrete(drop=F)+scale_fill_manual(values=col_list[c(3,4,5)], drop=F)+
+	scale_color_manual(values=col_list[c(3,4,5)], drop=F)+
+	labs(title=NULL, x=NULL, y="Difference in proportions")+
+	theme(panel.background=element_rect(0, linetype = 0), panel.border=element_rect(fill='transparent', linewidth=0.35, color='black'), 
+	axis.title=element_text(size=title_size, colour="black"), axis.text.y=element_text(size=text_size, colour="black"), 
+	axis.text.x=element_text(size=text_size, colour="black", angle=30, hjust=1), 
+	axis.ticks=element_line(linewidth=0.35, color="black"), 
+	legend.position="none", plot.margin=margin(-5,0,-5,0)))+tag_thm
+
+targets <- c("Nqo1", "Nfix", "Fgf12-24", "Fgf12-99")
+groups <- c("D", "V")
+data_raw <- read.csv("qpcr_info.csv", h=T)
+res <- data.frame()
+for (target in targets) for (group in groups)
+{
+	ids <- which(data_raw$Target == target & data_raw$Group == group)
+	res <- rbind(res, data.frame(Target=target, Group=group, Rep=9, 
+		RQ.mean=mean(data_raw$RQ[ids]), RQ.sd=sd(data_raw$RQ[ids])))
+}
+res$RQ.sem <- res$RQ.sd/sqrt(res$Rep)
+res$Target <- factor(res$Target, levels=targets)
+#t.test(data_raw$RQ[which(data_raw$Target == "Nqo1" & data_raw$Group == "V")], data_raw$RQ[which(data_raw$Target == "Nqo1" & data_raw$Group == "D")])
+#t.test(data_raw$RQ[which(data_raw$Target == "Nfix" & data_raw$Group == "V")], data_raw$RQ[which(data_raw$Target == "Nfix" & data_raw$Group == "D")])
+#t.test(data_raw$RQ[which(data_raw$Target == "Fgf12-24" & data_raw$Group == "V")], data_raw$RQ[which(data_raw$Target == "Fgf12-24" & data_raw$Group == "D")])
+#t.test(data_raw$RQ[which(data_raw$Target == "Fgf12-99" & data_raw$Group == "V")], data_raw$RQ[which(data_raw$Target == "Fgf12-99" & data_raw$Group == "D")])
+res$sig <- c("***", "***", "***", "***", "NS", "NS", "***", "***")
+res_sub <- res[which(res$Target == "Nqo1" | res$Target == "Nfix"),]
+data_sub <- data_raw[which(data_raw$Target == "Nqo1" | data_raw$Target == "Nfix"),]
+pia <- wrap_elements(ggplot(res_sub, aes(x=Group, y=RQ.mean))+
+	geom_bar(stat="identity", color="black", position=position_dodge(0.7), width=0.6, linewidth=0.3)+
+	geom_errorbar(aes(ymin=RQ.mean, ymax=RQ.mean+RQ.sem), size=0.3, width=0.2, position=position_dodge(0.7))+
+	geom_barsignif(aes(y=RQ.mean+RQ.sem, signif=sig), control_index=1, vjust=0.04, position=position_dodge(0.7))+
+	geom_quasirandom(aes(x=Group, y=RQ), data_sub, pch=21, size=1, fill="white", groupOnX=T)+
+	facet_wrap(~Target, nrow=1, scales="free")+
+	labs(title=NULL, x=NULL, y="Relative Expression")+
+	theme(panel.background=element_rect(0, linetype = 0), panel.border=element_rect(fill='transparent',colour='black'), 
+	strip.background=element_blank(), axis.ticks=element_line(colour="black"), 
+	plot.title=element_text(size=title_size, colour="black", hjust=0.5), 
+	strip.text=element_text(size=title_size, colour="black"), 
+	axis.text=element_text(size=text_size, colour="black"), 
+	axis.title=element_text(size=title_size, colour="black"), plot.margin=margin(-10,0,0,0)))+tag_thm
+res_sub <- res[which(res$Target == "Fgf12-24" | res$Target == "Fgf12-99"),]
+data_sub <- data_raw[which(data_raw$Target == "Fgf12-24" | data_raw$Target == "Fgf12-99"),]
+res_line <- data.frame(Target=c("Fgf12-24", "Fgf12-99"), 
+	a=res_sub$RQ.mean[c(2, 4)] - res_sub$RQ.mean[c(1, 3)], 
+	b=res_sub$RQ.mean[c(1, 3)] * 2 - res_sub$RQ.mean[c(2, 4)])
+pib <- wrap_elements(ggplot(res_sub, aes(x=Group, y=RQ.mean))+
+	geom_bar(stat="identity", color="black", position=position_dodge(0.7), width=0.6, linewidth=0.3)+
+	geom_errorbar(aes(ymin=RQ.mean, ymax=RQ.mean+RQ.sem), size=0.3, width=0.2, position=position_dodge(0.7))+
+	geom_barsignif(aes(y=RQ.mean+RQ.sem, signif=sig), control_index=1, vjust=0.04, position=position_dodge(0.7))+
+	geom_abline(aes(slope=a, intercept=b), res_line, linetype="dashed", color=col_list[3], size=1)+
+	geom_quasirandom(aes(x=Group, y=RQ), data_sub, pch=21, size=1, fill="white", groupOnX=T)+
+	facet_wrap(~Target, nrow=1, scales="free")+
+	labs(title=NULL, x=NULL, y="Relative Expression")+
+	theme(panel.background=element_rect(0, linetype = 0), panel.border=element_rect(fill='transparent',colour='black'), 
+	strip.background=element_blank(), axis.ticks=element_line(colour="black"), 
+	plot.title=element_text(size=title_size, colour="black", hjust=0.5), 
+	strip.text=element_text(size=title_size, colour="black"), 
+	axis.text=element_text(size=text_size, colour="black"), 
+	axis.title=element_text(size=title_size, colour="black"), plot.margin=margin(-10,0,0,0)))+tag_thm
+pii <- wrap_plots(list(pia, pib), nrow=1)+tag_thm
+
 pblank <- wrap_elements(ggplot()+geom_blank()+theme(panel.background=element_blank()))+tag_thm
 ggsave(plot=wrap_plots(list(
 	wrap_elements(wrap_plots(list(pa, pb, pc, pd), nrow=1, widths=c(1,1,1,2))+
@@ -266,6 +275,19 @@ ggsave(plot=wrap_plots(list(
 	plot_annotation(tag_levels=list(c("E", "F", "G", "H")), theme=tag_thm))+tag_thm, 
 	wrap_elements(wrap_plots(list(pdx, pga), widths=c(1,3))+
 	plot_annotation(tag_levels=list(c("I", "J"))))+tag_thm, 
-	pblank), ncol=1, heights=c(1,1.1,1.7,0.8))+tag_thm, 
-	width=210, height=297, dpi=300, units="mm", filename="oe_fl_fig_S03.pdf", limitsize=F)
+	wrap_elements(wrap_plots(list(pii, pll), widths=c(3, 1))+
+	plot_annotation(tag_levels=list(c("K", "", "L"))))+tag_thm), 
+	ncol=1, heights=c(1,1,1.6,1))+tag_thm, 
+	width=210, height=297, dpi=300, units="mm", filename="oe_fl_fig_S03.png", limitsize=F)
 
+ggsave(plot=wrap_plots(list(
+	wrap_elements(wrap_plots(list(pa, pb, pc, pd), nrow=1, widths=c(1,1,1,2))+
+	plot_annotation(tag_levels=list(c("A", "B", "C", "D")), theme=tag_thm))+tag_thm, 
+	wrap_elements(wrap_plots(list(pe, pf, pg, pca), nrow=1, widths=c(1.4,0.8,0.8,1.5))+
+	plot_annotation(tag_levels=list(c("E", "F", "G", "H")), theme=tag_thm))+tag_thm, 
+	wrap_elements(wrap_plots(list(pdx, pga), widths=c(1,3))+
+	plot_annotation(tag_levels=list(c("I", "J"))))+tag_thm, 
+	wrap_elements(wrap_plots(list(pii, pll), widths=c(3, 1))+
+	plot_annotation(tag_levels=list(c("K", "", "L"))))+tag_thm), 
+	ncol=1, heights=c(1,1,1.6,1))+tag_thm, 
+	width=210, height=297, dpi=300, units="mm", filename="oe_fl_fig_S03.pdf", limitsize=F)

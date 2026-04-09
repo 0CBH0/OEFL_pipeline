@@ -45,12 +45,12 @@ tag_thm <- theme(plot.tag=element_text(size=title_size, face="bold", colour="bla
 	panel.background=element_rect(fill="transparent", colour=NA),  plot.background=element_rect(fill="transparent", colour=NA), 
 	legend.box.spacing=unit(0, "pt"))
 
-#gtf <- read.table("genes.gtf", sep="\t")
-#gtf <- gtf[grep("^chr.*", gtf[, 1]),]
-#colnames(gtf) <- c("seq_id", "source", "type", "start", "end", "score", "strand", "phase", "attributes")
-#gtf$transcript_id <- gsub(";.*", "", gsub(".*transcript_id ", "", gtf$attributes))
-#gtf$gene_id <- gsub(";.*", "", gsub(".*gene_id ", "", gtf$attributes))
-#gtf$gene_name <- gsub(";.*", "", gsub(".*gene_name ", "", gtf$attributes))
+gtf <- read.table("genes.gtf", sep="\t")
+gtf <- gtf[grep("^chr.*", gtf[, 1]),]
+colnames(gtf) <- c("seq_id", "source", "type", "start", "end", "score", "strand", "phase", "attributes")
+gtf$transcript_id <- gsub(";.*", "", gsub(".*transcript_id ", "", gtf$attributes))
+gtf$gene_id <- gsub(";.*", "", gsub(".*gene_id ", "", gtf$attributes))
+gtf$gene_name <- gsub(";.*", "", gsub(".*gene_name ", "", gtf$attributes))
 gtf <- read.delim("gtf_info.tsv")
 
 types <- c("HBC", "GBC", "INP", "iOSN", "mOSN")
@@ -58,8 +58,6 @@ osn_sct <- readRDS("osn_sct.rds")
 osn_rna <- readRDS("osn_rna.rds")
 osn_rna$nIsoform <- as.numeric(colSums(osn_sct[["trans"]] > 0))
 osn_rna$nGene<- as.numeric(colSums(osn_sct[["genes"]] > 0))
-#rec <- data.frame(bc=colnames(osn_rna), type=osn_rna$cell.subtype_fix)
-#write.table(rec, "/mnt/md0/oe_full_length/output/OEfulllength/neuron_bc_info.tsv", col.names=F, row.names=F, quote=F, sep="\t")
 
 data_raw <- H5File$new("/mnt/md0/oe_full_length/output/OEfulllength/osn_trans_ass.h5", mode="r")
 sct <- list()
@@ -425,6 +423,16 @@ pcb <- ggplot(rec_bca, aes(x=Count, y=Rank, color=pvalue, size=Count))+geom_poin
 	axis.line=element_blank(), panel.background=element_rect(fill='gray98'))+tag_thm
 
 pblank <- wrap_elements(ggplot()+geom_blank()+theme(panel.background=element_blank()))+tag_thm
+ggsave(plot=wrap_plots(list(
+	wrap_elements(wrap_plots(list(paa,pab), nrow=1, widths=c(1,1))+
+	plot_annotation(tag_levels=list(c("A", "B")), theme=tag_thm))+tag_thm, 
+	wrap_elements(wrap_plots(list(pba,pbb,pbc,pbd,pbe), nrow=1, widths=c(1,0.5,0.5,0.5,0.5))+
+	plot_annotation(tag_levels=list(c("C", "E", "", "", "")), theme=tag_thm))+tag_thm, 
+	wrap_elements(wrap_plots(list(pca, pcb), nrow=1, widths=c(6,1))+
+	plot_annotation(tag_levels=list(c("D", "F")), theme=tag_thm))+tag_thm, 
+	pblank), ncol=1, heights=c(1,1,1,1.6)), 
+	width=210, height=297, dpi=300, units="mm", filename="oe_fl_fig_S02.png", limitsize=F)
+
 ggsave(plot=wrap_plots(list(
 	wrap_elements(wrap_plots(list(paa,pab), nrow=1, widths=c(1,1))+
 	plot_annotation(tag_levels=list(c("A", "B")), theme=tag_thm))+tag_thm, 

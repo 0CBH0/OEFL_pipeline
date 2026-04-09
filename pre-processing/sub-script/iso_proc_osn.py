@@ -206,10 +206,32 @@ with open("/mnt/md0/oe_full_length/output/OSNfulllength/isoquant_bam/OUT/OUT.rea
         if same_test and ts != rec[0]:
             rec = ["", []]
         if rec[0] != "":
-            #if len(rec[1]) > 1:
-            #    print("???")
-            #    break
-            reads_dict[line[0]] = [line[1], line[2], line[4], trans_dict[line[1]][gene][ref_dict[line[1]][gene][rec[1][0]].cds][0], line[7]]
+            if len(rec[1]) > 1:
+                sa = int(line[7].split("-")[0])
+                sb = int(line[7].split("-")[-1])
+                tts = []
+                for tt in rec[1]:
+                    tt_exon = ref_dict[line[1]][gene][tt].exon
+                    tts.append([int(tt_exon[0].split("-")[0]), int(tt_exon[-1].split("-")[-1]), tt])
+                test1 = [-1, ""]
+                test2 = [1, ""]
+                for tt in tts:
+                    rr = min(sa-tt[0], tt[1]-sb)
+                    if rr < 0:
+                        if test2[0] == 1 or rr > test2[0]:
+                            test2 = [rr, tt[2]]
+                    else:
+                        if test1[0] == -1 or rr < test1[0]:
+                            test1 = [rr, tt[2]]
+                if test1[0] != -1:
+                    reads_dict[line[0]] = [line[1], line[2], line[4], test1[1], line[7]]
+                elif test2[0] != 1:
+                    reads_dict[line[0]] = [line[1], line[2], line[4], test2[1], line[7]]
+                else:
+                    print("???")
+                    break
+            else:
+                reads_dict[line[0]] = [line[1], line[2], line[4], rec[1][0], line[7]]
             line = fs.readline()
             continue
         if "tes_match" in line[6] and len(line[7].split(",")) > 1 and line[0] not in undef_reads:
@@ -775,8 +797,7 @@ r = os.system("scp OSNfulllength.tagged_fix.sort.bam* xuyc7@202.116.90.56:/usr/s
 
 
 ref_sub = ref[ref["symbol"].str.contains(r"^Olfr", regex=True)]
-#/mnt/md0/oe_full_length/output/OSNfulllength/olfr_info.csv
-olfr_res = open("olfr_info.csv", "w")
+olfr_res = open("/mnt/md0/oe_full_length/output/OSNfulllength/olfr_info.csv", "w")
 r = olfr_res.write(f"ID,Gene,Symbol,TypeC,TypeE,TSS,UTR,CDS,Exon\n")
 for index, row in ref_sub.iterrows():
     chr, start, end, strand, symbol, gene_id = list(row)
@@ -940,6 +961,7 @@ def dna2protein(seq):
         protein += amino_acid
     return protein
 
+genome = SeqIO.to_dict(SeqIO.parse("/home/cbh/library/refdata-gex-mm10-2020-A/fasta/genome.fa", "fasta"))
 res = open("/mnt/md0/oe_full_length/output/OSNfulllength/iso_trans_test.fa", "w")
 res_aa = open("/mnt/md0/oe_full_length/output/OSNfulllength/iso_trans_test.faa", "w")
 iso_trans = pd.read_table("/home/cbh/work/oe_fl_re/osn_iso_trans_test.tsv")
@@ -1036,4 +1058,43 @@ fs.close()
 r = os.system("samtools sort -@8 OSNfulllength.tagged_olfr.bam -o OSNfulllength.tagged_olfr.sort.bam")
 r = os.system("samtools index OSNfulllength.tagged_olfr.sort.bam")
 r = os.system("rm OSNfulllength.tagged_olfr.bam")
+r = os.system("scp OSNfulllength.tagged_olfr.sort.bam* xuyc7@202.116.90.56:/usr/share/nginx/html/jbrowse2/usr_data/")
+olfr_res = open("olfr_count.csv", "w")
+r = olfr_res.write("Gene,ID,Pos,Count,PerCell\n")
+for gene, terms in olfr_dict.items():
+    count = 0
+    for k, v in terms.items():
+        count += len(v)
+    chr, start, end, strand, symbol, id = list(ref[(ref["attributes"] == gene[:-2])].iloc[0])
+    r = olfr_res.write(f"{symbol},{gene[:-2]},{chr}:{start}-{end},{count},{round(count/len(terms))}\n")
+
+olfr_res.close()
+
+
+trans_info = defaultdict(list)
+res = open("/home/cbh/work/oe_fl_re/osn_iso_trans_test.gtf", "w")
+iso_trans = pd.read_table("/home/cbh/work/oe_fl_re/osn_iso_trans_test.tsv")
+for index, row in iso_trans.iterrows():
+    chr = row["Chr"]
+    gene = row["Gene"][:-2]
+    symbol = row["Symbol"]
+    id = row["ID"]
+    strand = row["Strand"]
+    trans_name = symbol + "-" + str(len(trans_info[gene]))
+    attr = f'gene_id "{gene}"; transcript_id "{id}"; gene_type "protein_coding"; gene_name "{symbol}"; transcript_type "protein_coding"; transcript_name "{trans_name}"'
+    r = res.write(f'{chr}\tHM\ttranscript\t{row["Exon"].split("-")[0]}\t{row["Exon"].split("-")[-1]}\t.\t{strand}\t.\t{attr}\n')
+    eid = 1
+    for s, e in [[int(y) for y in x.split("-")] for x in row["Exon"].split(";")]:
+        r = res.write(f'{chr}\tHM\texon\t{s}\t{e}\t.\t{strand}\t.\t{attr}; exon_number {eid}\n')
+        eid += 1
+    for s, e in [[int(y) for y in x.split("-")] for x in row["CDS"].split(";")]:
+        r = res.write(f'{chr}\tHM\tCDS\t{s}\t{e}\t.\t{strand}\t.\t{attr}\n')
+    if strand == "+":
+        r = res.write(f'{chr}\tHM\tstart_codon\t{int(row["CDS"].split("-")[0])}\t{int(row["CDS"].split("-")[0])+2}\t.\t{strand}\t.\t{attr}\n')
+        r = res.write(f'{chr}\tHM\tstop_codon\t{int(row["CDS"].split("-")[-1])-2}\t{int(row["CDS"].split("-")[-1])}\t.\t{strand}\t.\t{attr}\n')
+    elif strand == "-":
+        r = res.write(f'{chr}\tHM\tstart_codon\t{int(row["CDS"].split("-")[-1])-2}\t{int(row["CDS"].split("-")[-1])}\t.\t{strand}\t.\t{attr}\n')
+        r = res.write(f'{chr}\tHM\tstop_codon\t{int(row["CDS"].split("-")[0])}\t{int(row["CDS"].split("-")[0])+2}\t.\t{strand}\t.\t{attr}\n')
+
+res.close()
 

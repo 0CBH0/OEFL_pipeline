@@ -210,7 +210,7 @@ osn_rna_sub <- subset(osn_rna, cells=colnames(osn_rna)[which(osn_rna$vdv != 0)])
 rec_ac <- data.frame(osn_rna_sub@meta.data)
 rec_ac$X <- osn_rna_sub@reductions[["umap"]]@cell.embeddings[, 1]
 rec_ac$Y <- osn_rna_sub@reductions[["umap"]]@cell.embeddings[, 2]
-pc <- ggplot(rec_ac, aes(x=X, y=Y, color=-vdv))+geom_point(size=1)+
+pc <- ggplot(rec_ac, aes(x=X, y=Y, color=-vdv))+geom_point(size=0.1)+
 	labs(title="Score of D > V", x="UMAP1", y="UMAP2", color="Score")+
 	scale_color_gradientn(colors=rev(brewer.pal(11, "Spectral")))+
 	theme(axis.line=element_blank(), legend.key.size=unit(12, "pt"), 
@@ -225,7 +225,7 @@ osn_rna_sub <- subset(osn_rna, cells=colnames(osn_rna)[which(osn_rna$vap != 0)])
 rec_ad <- data.frame(osn_rna_sub@meta.data)
 rec_ad$X <- osn_rna_sub@reductions[["umap"]]@cell.embeddings[, 1]
 rec_ad$Y <- osn_rna_sub@reductions[["umap"]]@cell.embeddings[, 2]
-pd <- ggplot(rec_ad, aes(x=X, y=Y, color=-vap))+geom_point(size=1)+
+pd <- ggplot(rec_ad, aes(x=X, y=Y, color=-vap))+geom_point(size=0.1)+
 	labs(title="Score of A > P", x="UMAP1", y="UMAP2", color="Score")+
 	scale_color_gradientn(colors=rev(brewer.pal(11, "Spectral")))+
 	theme(axis.line=element_blank(), legend.key.size=unit(12, "pt"), 
@@ -506,7 +506,7 @@ cmp_vdv_raw <- cmp_raw
 cmp_vdv_raw <- read.csv("cmp_vdv_filter3.csv", h=T, r=1)
 cmp_vdv_raw$Anno <- ""
 aid <- which(cmp_vdv_raw$Group == "IDG")
-cmp_vdv_raw$Anno[aid[1:min(10, length(aid))]] <- cmp_vdv_raw$Symbol[aid[1:min(10, length(aid))]]
+cmp_vdv_raw$Anno[aid[1:min(20, length(aid))]] <- cmp_vdv_raw$Symbol[aid[1:min(20, length(aid))]]
 cmp_vdv_raw$Annoc <- "black"
 cmp_vdv_raw$Annoc[which(cmp_vdv_raw$Anno == "Fgf12")] <- "red"
 
@@ -550,7 +550,7 @@ cmp_vap_raw <- cmp_raw
 cmp_vap_raw <- read.csv("cmp_vap_filter3.csv", h=T, r=1)
 cmp_vap_raw$Anno <- ""
 aid <- which(cmp_vap_raw$Group == "IDG")
-cmp_vap_raw$Anno[aid[1:min(15, length(aid))]] <- cmp_vap_raw$Symbol[aid[1:min(15, length(aid))]]
+cmp_vap_raw$Anno[aid[1:min(20, length(aid))]] <- cmp_vap_raw$Symbol[aid[1:min(20, length(aid))]]
 cmp_vap_raw$Annoc <- "black"
 cmp_vap_raw$Annoc[which(cmp_vap_raw$Anno == "Anapc16")] <- "red"
 
@@ -931,7 +931,7 @@ piab <- ggplot(info_exons, aes(xstart=start, xend=end, y=transcript_name))+
 	scale_x_continuous(breaks=(max(c(info_exons$end, info_utrs$end))+min(c(info_exons$start, info_utrs$start)))/2, labels=info_ranges)+
 	scale_y_discrete(expand=expansion(mult=c(0.1,0.23)))+
 	geom_text(aes(y=transcript_name, label=transcript_name, color=transcript_name), 
-	x=min(info_utrs$start, info_exons$start), hjust=0, vjust=0, nudge_y=0.3, size=2.6)+
+	x=min(info_utrs$start, info_exons$start), hjust=0, vjust=0, nudge_y=0.3, size=2.3)+
 	scale_fill_manual(values=info_col, drop=F)+scale_color_manual(values=info_col, drop=F)+
 	theme(panel.border=element_rect(color="black", fill=NA, linewidth=0.4), panel.background=element_blank(), 
 	axis.line=element_blank(), axis.title=element_blank(), axis.ticks=element_blank(), axis.text.y=element_blank(), 
@@ -1180,9 +1180,9 @@ pjab <- ggplot(info_exons, aes(xstart=start, xend=end, y=transcript_name))+
 	color=transcript_name), linewidth=0, height=0.1)+
 	labs(title=NULL, x=NULL, y=NULL)+
 	scale_x_continuous(breaks=(max(c(info_exons$end, info_utrs$end))+min(c(info_exons$start, info_utrs$start)))/2, labels=info_ranges)+
-	scale_y_discrete(expand=expansion(mult=c(0.1,0.23)))+
+	#scale_y_discrete(expand=expansion(mult=c(0.23,0.23)))+
 	geom_text(aes(y=transcript_name, label=transcript_name, color=transcript_name), 
-	x=min(info_utrs$start, info_exons$start), hjust=0, vjust=0, nudge_y=0.3, size=2.6)+
+	x=min(info_utrs$start, info_exons$start), hjust=0, vjust=0, nudge_y=0.3, size=2.3)+
 	scale_fill_manual(values=info_col, drop=F)+scale_color_manual(values=info_col, drop=F)+
 	theme(panel.border=element_rect(color="black", fill=NA, linewidth=0.4), panel.background=element_blank(), 
 	axis.line=element_blank(), axis.title=element_blank(), axis.ticks=element_blank(), axis.text.y=element_blank(), 
@@ -1290,7 +1290,7 @@ pjc <- wrap_elements(wrap_plots(c(pls, list(pjcb)), ncol=1, heights=rep(c(3, 3, 
 	plot_annotation(gene, theme=theme(plot.title=element_text(size=title_size, colour="black", hjust=0.5), 
 	plot.margin=margin(0,0,0,0), panel.spacing=unit(0, "pt"))))+tag_thm
 
-
+#ggsave(plo=pjc, width=5, height=4, dpi=300, filename="test.png", limitsize=F)
 
 rec_mm <- data.frame(Group=rep(c("D>V", "A>P"), each=2), Type=rep(c("AS", "ATSS"), 2), 
 	Number=c(table(cmp_vdv_raw$ET[which(cmp_vdv_raw$Group == "IDG")]),
@@ -1317,11 +1317,11 @@ ids <- which(cmp_vap_raw$Group == "IDG" & cmp_vap_raw$ET != "Diff")
 rec_mk <- rbind(rec_mk, data.frame(Group="A>P", Total=length(ids), table(cmp_vap_raw$ETS[ids])))
 colnames(rec_mk) <- c("Group", "Total", "Type", "Number")
 rec_mk$Group <- factor(rec_mk$Group, levels=c("D>V", "A>P"))
-rec_mk$Type <- factor(rec_mk$Type, levels=c("SE", "A3SS", "A5SS"))
+rec_mk$Type <- factor(rec_mk$Type, levels=c("A3SS", "A5SS", "SE", "RI"))
 rec_mk$Rate <- rec_mk$Number*100/rec_mk$Total
 ph <- ggplot(rec_mk, aes(x=Group, y=Rate, fill=Type))+geom_bar(stat="identity", width=0.6)+
 	labs(title=NULL, x=NULL, y="Percentage (%)", fill="AS")+
-	scale_fill_manual(values=col_list[c(2,5,6)])+
+	scale_fill_manual(values=col_list[c(2,5,4,6)])+
 	scale_y_continuous(expand=c(0, 0))+
 	guides(fill=guide_legend(byrow=T))+
 	theme(panel.background=element_rect(0, linetype=0), axis.ticks.x=element_blank(), 
@@ -1334,6 +1334,19 @@ ph <- ggplot(rec_mk, aes(x=Group, y=Rate, fill=Type))+geom_bar(stat="identity", 
 	legend.key.size=unit(12, "pt"), #legend.box.spacing = unit(2, "pt"), 
 	legend.key=element_blank(), legend.background=element_blank())+tag_thm
 pec <- wrap_plots(list(pg, ph), nrow=1)+plot_layout(guides="collect")+tag_thm
+
+pblank <- wrap_elements(ggplot()+geom_blank()+theme(panel.background=element_blank()))+tag_thm
+ggsave(plot=wrap_plots(list(
+	wrap_elements(wrap_plots(list(pa, pc, pca, pcb), nrow=1, widths=c(1.11, 1, 1, 1))+plot_annotation(tag_levels=list(c("A", "C", "E", "")), theme=tag_thm))+tag_thm, 
+	wrap_elements(wrap_plots(list(pb, pd, pda, pdb), nrow=1, widths=c(1, 1, 1, 1))+plot_annotation(tag_levels=list(c("B", "D", "F", "")), theme=tag_thm))+tag_thm, 
+	wrap_elements(wrap_plots(list(pea, peb, pec), nrow=1, widths=c(1, 1, 1.2))+
+	plot_annotation(tag_levels=list(c("G", "H", "I", "")), theme=tag_thm))+tag_thm, 
+	wrap_elements(wrap_plots(list(pia, pib, pic), nrow=1, widths=c(3, 2.2, 2.3))+
+	plot_annotation(tag_levels=list(c("J", "", "")), theme=tag_thm))+tag_thm, 
+	wrap_elements(wrap_plots(list(pja, pjb, pjc), nrow=1, widths=c(3, 2.2, 2.3))+
+	plot_annotation(tag_levels=list(c("K", "", "")), theme=tag_thm))+tag_thm, 
+	pblank), ncol=1, heights=c(1,1,1,1,1,0.75)), 
+	width=210, height=297, dpi=300, units="mm", filename="oe_fl_fig_03.png", limitsize=F)
 
 pblank <- wrap_elements(ggplot()+geom_blank()+theme(panel.background=element_blank()))+tag_thm
 ggsave(plot=wrap_plots(list(
