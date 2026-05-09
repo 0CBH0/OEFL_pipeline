@@ -30,24 +30,45 @@ tag_thm <- theme(plot.tag=element_text(size=title_size, face="bold", color="blac
 	legend.box.spacing=unit(0, "pt"))
 
 osn_rna <- readRDS("osn_rna2.rds")
+#types <- names(table(osn_rna[["cell.cls"]][,1]))
+#types <- lapply(types, function(x){FindMarkers(osn_rna, ident.1=x, group.by="cell.cls")})
+#names(types) <- names(table(osn_rna[["cell.cls"]][,1]))
+#for (i in 1:length(types)) types[[i]] <- types[[i]][which(types[[i]]$p_val_adj < 0.01 & types[[i]]$avg_log2FC > 0.1),]
+#for (i in 1:length(types)) types[[i]] <- types[[i]][order(types[[i]]$avg_log2FC, decreasing=T),]
+#for (i in 1:length(types)) types[[i]] <- types[[i]][order(types[[i]]$p_val_adj),]
 osn_rna$cell.subtype_fix <- "mOSN"
 osn_rna$cell.subtype_fix[which(osn_rna$cell.cls == 36)] <- "iOSN"
 osn_rna$cell.subtype_fix[which(osn_rna$cell.cls == 39)] <- "iOSN"
 osn_rna$cell.subtype_fix[which(osn_rna$cell.cls == 40)] <- "Basophil"
 osn_rna$cell.subtype_fix[which(osn_rna$cell.cls == 41)] <- "Basophil"
 osn_rna$cell.subtype_fix[which(osn_rna$cell.cls == 42)] <- "Basophil"
+#ggsave(plot=UMAPPlot(osn_rna, group.by="cell.subtype_fix", pt.size=1.2, label=T, label.size=5)+
+#	labs(title=NULL, x="UMAP1", y="UMAP2", color="Type"), width=10, height=8, dpi=200, "test.png")
 
 types <- c("Basophil", "iOSN", "mOSN")
 cell_col <- col_list[1:length(types)]
 names(cell_col) <- types
 
 osn_nano <- readRDS("osn_nano.rds")
+#types <- names(table(osn_nano[["cell.cls"]][,1]))
+#types <- lapply(types, function(x){FindMarkers(osn_nano, ident.1=x, group.by="cell.cls")})
+#names(types) <- names(table(osn_nano[["cell.cls"]][,1]))
+#for (i in 1:length(types)) types[[i]] <- types[[i]][which(types[[i]]$p_val_adj < 0.01 & types[[i]]$avg_log2FC > 0.1),]
+#for (i in 1:length(types)) types[[i]] <- types[[i]][order(types[[i]]$avg_log2FC, decreasing=T),]
+#for (i in 1:length(types)) types[[i]] <- types[[i]][order(types[[i]]$p_val_adj),]
+#table(osn_rna$cell.cls[match(colnames(osn_nano)[which(osn_nano$cell.cls == 30)], colnames(osn_rna))]) # 36
+#table(osn_rna$cell.cls[match(colnames(osn_nano)[which(osn_nano$cell.cls == 33)], colnames(osn_rna))]) # xxx
+#table(osn_rna$cell.cls[match(colnames(osn_nano)[which(osn_nano$cell.cls == 36)], colnames(osn_rna))]) # 39
+#table(osn_rna$cell.cls[match(colnames(osn_nano)[which(osn_nano$cell.cls == 38)], colnames(osn_rna))]) # 40 42
+#table(osn_rna$cell.cls[match(colnames(osn_nano)[which(osn_nano$cell.cls == 39)], colnames(osn_rna))]) # 41
 osn_nano$cell.subtype_fix <- "mOSN"
 osn_nano$cell.subtype_fix[which(osn_nano$cell.cls == 30)] <- "iOSN"
 osn_nano$cell.subtype_fix[which(osn_nano$cell.cls == 33)] <- "iOSN"
 osn_nano$cell.subtype_fix[which(osn_nano$cell.cls == 36)] <- "iOSN"
 osn_nano$cell.subtype_fix[which(osn_nano$cell.cls == 38)] <- "Basophil"
 osn_nano$cell.subtype_fix[which(osn_nano$cell.cls == 39)] <- "Basophil"
+#ggsave(plot=UMAPPlot(osn_nano, group.by="cell.subtype_fix", pt.size=1.2, label=T, label.size=5)+
+#	labs(title=NULL, x="UMAP1", y="UMAP2", color="Type"), width=10, height=8, dpi=200, "test.png")
 
 cs_info <- data.frame(osn_rna@meta.data)
 pa <- wrap_elements(ggplot(cs_info, aes(x="Term", y=nFeature_RNA))+geom_violin(fill=col_list[1], color=col_list[1])+
@@ -169,6 +190,53 @@ pca <- ggplot(rec_c, aes(x=X, y=Y, fill=Val))+geom_tile()+
 	legend.title=element_text(size=title_size, color="black"), 
 	legend.text=element_text(size=text_size, color="black"))+tag_thm
 
+#cmp_vdv_raw <- read.csv("cmp_vdv_filter3.csv", h=T, r=1)
+#cmp_vap_raw <- read.csv("cmp_vap_filter3.csv", h=T, r=1)
+#for (type in c("A > P", "D > V"))
+#{
+#	terms <- cmp_vap_raw$Symbol[which(cmp_vap_raw$Group == "IDG")]
+#	if (type == "D > V") terms <- cmp_vdv_raw$Symbol[which(cmp_vdv_raw$Group == "IDG")]
+#	eid <- mapIds(org.Mm.eg.db, keys=terms, column="ENTREZID", keytype="SYMBOL", multiVals="first")
+#	ego <- enrichGO(gene=eid, keyType="ENTREZID", OrgDb=org.Mm.eg.db, ont="BP", pAdjustMethod="BH", readable=T)
+#	ego <- ego@result[which((ego@result$pvalue < 0.01 | ego@result$qvalue < 0.05) & ego@result$Count > 1),]
+#	if (nrow(ego) == 0) next
+#	ego_id <- data.frame(ID=ego$ID, level=0)
+#	id_filtered <- c()
+#	for (i in 1:nrow(ego_id))
+#	{
+#		if (!is.na(match(ego_id$ID[i], id_filtered))) next
+#		rec <- as.character(unlist(mget(ego_id$ID[i], GOBPPARENTS, ifnotfound=NA)))
+#		parents <- rec
+#		level <- 0
+#		while(length(parents) > 0)
+#		{
+#			parents_ori <- parents
+#			parents <- c()
+#			for (p in parents_ori)
+#			{
+#				if (p == "all" & ego_id$level[i] == 0) ego_id$level[i] <- level
+#				if (is.na(p) | p == "all") next
+#				rec <- c(rec, p)
+#				parents <- c(parents, as.character(unlist(mget(p, GOBPPARENTS, ifnotfound=NA))))
+#			}
+#			level <- level + 1
+#			parents <- unique(parents)
+#		}
+#		rec <- unique(rec)
+#		rec <- which(!is.na(match(ego_id$ID, rec)))
+#		if (length(rec) > 0) id_filtered <- c(id_filtered, ego_id$ID[rec])
+#	}
+#	ego_id$level[match(unique(id_filtered), ego_id$ID)] <- 0
+#	if (length(which(ego_id$level > 2)) == 0) next
+#	ego_id <- ego_id[which(ego_id$level > 2),, drop=F]
+#	ego <- ego[match(ego_id$ID, ego$ID),, drop=F]
+#	ego$Level <- ego_id$level
+#	ego$Type <- type
+#	ego <- ego[order(ego$pvalue),]
+#	ego <- ego[order(ego$Count, decreasing=T),]
+#	if (type == "D > V") write.csv(ego, "cmp_dv_raw_go2.csv")
+#	if (type == "A > P") write.csv(ego, "cmp_ap_raw_go2.csv")
+#}
 ego_ap <- read.csv("cmp_ap_raw_go2.csv", r=1, h=T)
 ego_dv <- read.csv("cmp_dv_raw_go2.csv", r=1, h=T)
 ego_total <- rbind(ego_dv[1:min(nrow(ego_dv), 10),], ego_ap[1:min(nrow(ego_ap), 10),])
@@ -179,6 +247,7 @@ pga <- wrap_elements(ggplot(ego_total, aes(x=Count, y=Rank, colour=pvalue, size=
 	scale_color_gradient(low="#440255", high="#FFFFBF", guide=guide_colorbar(reverse=T))+
 	#scale_color_continuous(low=brewer.pal(11,"Spectral")[1], high=brewer.pal(11,"Spectral")[6], 
 	#guide=guide_colorbar(reverse=TRUE))+
+	scale_x_continuous(expand=expansion(mult=c(0.05, 0.15)))+
 	scale_y_discrete(breaks=ego_total$Rank, labels=ego_total$Description, position="right")+
 	facet_grid(Type~., scales="free_y", space="free_y", switch="y")+
 	labs(title=NULL, x=NULL, y=NULL, color="p.val")+
@@ -267,27 +336,17 @@ pib <- wrap_elements(ggplot(res_sub, aes(x=Group, y=RQ.mean))+
 	axis.title=element_text(size=title_size, colour="black"), plot.margin=margin(-10,0,0,0)))+tag_thm
 pii <- wrap_plots(list(pia, pib), nrow=1)+tag_thm
 
-pblank <- wrap_elements(ggplot()+geom_blank()+theme(panel.background=element_blank()))+tag_thm
-ggsave(plot=wrap_plots(list(
-	wrap_elements(wrap_plots(list(pa, pb, pc, pd), nrow=1, widths=c(1,1,1,2))+
-	plot_annotation(tag_levels=list(c("A", "B", "C", "D")), theme=tag_thm))+tag_thm, 
-	wrap_elements(wrap_plots(list(pe, pf, pg, pca), nrow=1, widths=c(1.4,0.8,0.8,1.5))+
-	plot_annotation(tag_levels=list(c("E", "F", "G", "H")), theme=tag_thm))+tag_thm, 
-	wrap_elements(wrap_plots(list(pdx, pga), widths=c(1,3))+
-	plot_annotation(tag_levels=list(c("I", "J"))))+tag_thm, 
-	wrap_elements(wrap_plots(list(pii, pll), widths=c(3, 1))+
-	plot_annotation(tag_levels=list(c("K", "", "L"))))+tag_thm), 
-	ncol=1, heights=c(1,1,1.6,1))+tag_thm, 
-	width=210, height=297, dpi=300, units="mm", filename="oe_fl_fig_S03.png", limitsize=F)
+pp <- wrap_elements(ggdraw()+draw_image("fig_s4b.png", scale=1))+tag_thm
 
 ggsave(plot=wrap_plots(list(
+	wrap_elements(pp+plot_annotation(tag_levels=list(c("A")), theme=tag_thm))+tag_thm, 
 	wrap_elements(wrap_plots(list(pa, pb, pc, pd), nrow=1, widths=c(1,1,1,2))+
-	plot_annotation(tag_levels=list(c("A", "B", "C", "D")), theme=tag_thm))+tag_thm, 
-	wrap_elements(wrap_plots(list(pe, pf, pg, pca), nrow=1, widths=c(1.4,0.8,0.8,1.5))+
-	plot_annotation(tag_levels=list(c("E", "F", "G", "H")), theme=tag_thm))+tag_thm, 
+	plot_annotation(tag_levels=list(c("B", "C", "D", "E")), theme=tag_thm))+tag_thm, 
+	wrap_elements(wrap_plots(list(pe, pf, pg, pca), nrow=1, widths=c(1.6,0.8,0.8,1.3))+
+	plot_annotation(tag_levels=list(c("F", "G", "H", "J")), theme=tag_thm))+tag_thm, 
 	wrap_elements(wrap_plots(list(pdx, pga), widths=c(1,3))+
-	plot_annotation(tag_levels=list(c("I", "J"))))+tag_thm, 
+	plot_annotation(tag_levels=list(c("I", "K")), theme=tag_thm))+tag_thm, 
 	wrap_elements(wrap_plots(list(pii, pll), widths=c(3, 1))+
-	plot_annotation(tag_levels=list(c("K", "", "L"))))+tag_thm), 
-	ncol=1, heights=c(1,1,1.6,1))+tag_thm, 
-	width=210, height=297, dpi=300, units="mm", filename="oe_fl_fig_S03.pdf", limitsize=F)
+	plot_annotation(tag_levels=list(c("L", "", "M")), theme=tag_thm))+tag_thm), 
+	ncol=1, heights=c(1.2,0.8,0.8,1.6,1))+tag_thm, 
+	width=210, height=340, dpi=300, units="mm", filename="oe_fl_fig_S03.pdf", limitsize=F)

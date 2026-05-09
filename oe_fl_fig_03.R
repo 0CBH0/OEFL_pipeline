@@ -36,6 +36,7 @@ library(MASS)
 library(cowplot)
 library(magick)
 options(stringsAsFactors=FALSE)
+options(future.globals.maxSize = 2000 * 1024^2) 
 
 col_list <- c(c("#46998b", "#847acc", "#ef8560", "#6994b3", "#d1934b", "#8fb350", "#de9cba", "#7b469e", 
 	"#9e4747", "#1e8751", "#cc9a04", "#4bb35b", "#e13344", "#855949", "#3b4992", "#6e84b8"), brewer.pal(12,"Set3")[-c(2, 9)])
@@ -56,20 +57,32 @@ gtf <- read.delim("gtf_info.tsv")
 
 spatial_genes <- c("Nqo1", "Acsm4", "Ncam2", "Nfix", "Nfib", "Plxna1", "Sema3a", "Nrp1")
 types <- c("HBC", "GBC", "INP", "iOSN", "mOSN")
-osn_rna <- readRDS("osn_rna2_fix.rds")
-#osn_rna$sp <- colSums(osn_rna[["SCT"]]$scale.data[sp_genes,] > 0)
-#osn_rna <- subset(osn_rna, cells=colnames(osn_rna)[which(osn_rna$cell.subtype_fix == "Mature")])
-#osn_rna <- SCTransform(osn_rna, method="glmGamPoi")
-#osn_rna <- RunUMAP(osn_rna, dims=1:6)
+osn_rna_osn <- readRDS("osn_rna2_fix.rds")
+osn_rna_oe <- readRDS("osn_rna.rds")
+osn_rna_oe <- subset(osn_rna_oe, cells=colnames(osn_rna_oe)[which(osn_rna_oe$cell.subtype_fix == "mOSN")])
+osn_rna_oe$batch  <- "oe"
+osn_rna_osn$batch <- "osn"
+osn_rna <- merge(osn_rna_osn, osn_rna_oe, add.cell.ids=c("OSN", "OE"), project="ALL")
+DefaultAssay(osn_rna) <- "RNA"
+osn_rna[["RNA"]] <- split(osn_rna[["RNA"]], f=osn_rna$batch)
+osn_rna <- NormalizeData(osn_rna)
+osn_rna <- FindVariableFeatures(osn_rna)
+osn_rna <- ScaleData(osn_rna)
+osn_rna <- RunPCA(osn_rna)
+osn_rna <- IntegrateLayers(osn_rna, method=RPCAIntegration, orig.reduction="pca", new.reduction="integrated.rpca", dims=1:30)
+osn_rna <- SCTransform(osn_rna, method="glmGamPoi")
+osn_rna <- RunUMAP(osn_rna, reduction = "integrated.rpca", dims=1:6, reduction.name = "umap.rpca")
+ggsave(plot=DimPlot(osn_rna, reduction = "umap.rpca", group.by="batch"), 
+	width=5, height=4, dpi=200, filename="test.png", limitsize=F)
 
 genes_d <- intersect(read.table("25_dorsal_features.txt")[, 1], rownames(osn_rna[["SCT"]]$scale.data))
 genes_v <- intersect(read.table("48_ventral_features.txt")[, 1], rownames(osn_rna[["SCT"]]$scale.data))
 genes_a <- intersect(read.table("50_anterior_features.txt")[, 1], rownames(osn_rna[["SCT"]]$scale.data))
 genes_p <- intersect(read.table("57_posterior_features.txt")[, 1], rownames(osn_rna[["SCT"]]$scale.data))
-genes_d <- genes_d[which(cor(t(osn_rna[["SCT"]]$scale.data[genes_d,]), osn_rna@reductions[["umap"]]@cell.embeddings[, 1]) < -0.1)]
-genes_v <- genes_v[which(cor(t(osn_rna[["SCT"]]$scale.data[genes_v,]), osn_rna@reductions[["umap"]]@cell.embeddings[, 1]) > 0.1)]
-genes_a <- genes_a[which(cor(t(osn_rna[["SCT"]]$scale.data[genes_a,]), osn_rna@reductions[["umap"]]@cell.embeddings[, 2]) > 0.1)]
-genes_p <- genes_p[which(cor(t(osn_rna[["SCT"]]$scale.data[genes_p,]), osn_rna@reductions[["umap"]]@cell.embeddings[, 2]) < -0.1)]
+genes_d <- genes_d[which(cor(t(osn_rna[["SCT"]]$scale.data[genes_d,]), osn_rna@reductions[["umap.rpca"]]@cell.embeddings[, 1]) < -0.1)]
+genes_v <- genes_v[which(cor(t(osn_rna[["SCT"]]$scale.data[genes_v,]), osn_rna@reductions[["umap.rpca"]]@cell.embeddings[, 1]) > 0.1)]
+genes_a <- genes_a[which(cor(t(osn_rna[["SCT"]]$scale.data[genes_a,]), osn_rna@reductions[["umap.rpca"]]@cell.embeddings[, 2]) < -0.1)]
+genes_p <- genes_p[which(cor(t(osn_rna[["SCT"]]$scale.data[genes_p,]), osn_rna@reductions[["umap.rpca"]]@cell.embeddings[, 2]) > 0.1)]
 sp_genes <- union(union(union(genes_d, genes_v), genes_a), genes_p)
 
 gene_mat <- as.matrix(osn_rna[["SCT"]]$scale.data[genes_d,])
@@ -151,17 +164,21 @@ sct[["features"]]$Symbol <- gtf$gene_name[match(sct[["features"]]$Gene, gtf$gene
 data_raw$close_all()
 osn_sct_raw <- list()
 osn_sct_raw[["trans"]] <- sct[["matrix"]]
+colnames(osn_sct_raw[["trans"]]) <- paste0("OSN_", colnames(osn_sct_raw[["trans"]]))
 osn_sct_raw[["utr3"]] <- sct[["utr3"]]
+colnames(osn_sct_raw[["utr3"]]) <- paste0("OSN_", colnames(osn_sct_raw[["utr3"]]))
 osn_sct_raw[["utr5"]] <- sct[["utr5"]]
+colnames(osn_sct_raw[["utr5"]]) <- paste0("OSN_", colnames(osn_sct_raw[["utr5"]]))
 osn_sct_raw[["features"]] <- sct[["features"]]
 osn_sct_raw[["features"]]$ID <- sct[["features"]]$Name
-ids <- match(colnames(osn_rna), colnames(osn_sct_raw[["trans"]]))
+ids <- match(intersect(colnames(osn_rna), colnames(osn_sct_raw[["trans"]])), colnames(osn_sct_raw[["trans"]]))
 osn_sct_raw[["trans"]] <- osn_sct_raw[["trans"]][, ids]
 osn_sct_raw[["utr3"]] <- osn_sct_raw[["utr3"]][, ids]
 osn_sct_raw[["utr5"]] <- osn_sct_raw[["utr5"]][, ids]
+osn_sct_raw_osn <- osn_sct_raw
 
-data_raw <- H5File$new("/mnt/md0/oe_full_length/output/OSNfulllength/osn_gene_info.h5", mode="r")
-scg <- list()
+data_raw <- H5File$new("/mnt/md0/oe_full_length/output/OEfulllength/osn_trans_ass.h5", mode="r")
+sct <- list()
 sparse.mat <- sparseMatrix(i=data_raw[["matrix/indices"]][]+1, p=data_raw[["matrix/indptr"]][], 
 	x=as.numeric(data_raw[["matrix/data"]][]), dims=data_raw[["matrix/shape"]][], repr = "T")
 rownames(sparse.mat) <- data_raw[["matrix/genes"]][]
@@ -174,20 +191,39 @@ sparse.utr5 <- sparseMatrix(i=data_raw[["matrix/indices"]][]+1, p=data_raw[["mat
 	x=as.numeric(data_raw[["matrix/utr5"]][]), dims=data_raw[["matrix/shape"]][], repr = "T")
 rownames(sparse.utr5) <- data_raw[["matrix/genes"]][]
 colnames(sparse.utr5) <- data_raw[["matrix/barcodes"]][]
-sparse.body <- sparseMatrix(i=data_raw[["matrix/indices"]][]+1, p=data_raw[["matrix/indptr"]][], 
-	x=as.numeric(data_raw[["matrix/body"]][]), dims=data_raw[["matrix/shape"]][], repr = "T")
-rownames(sparse.body) <- data_raw[["matrix/genes"]][]
-colnames(sparse.body) <- data_raw[["matrix/barcodes"]][]
-scg[["matrix"]] <- as.sparse(sparse.mat)
-scg[["utr3"]] <- as.sparse(sparse.utr3)
-scg[["utr5"]] <- as.sparse(sparse.utr5)
-scg[["body"]] <- as.sparse(sparse.body)
-scg[["features"]] <- data.frame(Name=data_raw[["matrix/features/name"]][], ID=data_raw[["matrix/features/id"]][], 
+sct[["matrix"]] <- as.sparse(sparse.mat)
+sct[["utr3"]] <- as.sparse(sparse.utr3)
+sct[["utr5"]] <- as.sparse(sparse.utr5)
+sct[["features"]] <- data.frame(Name=data_raw[["matrix/features/name"]][], ID=data_raw[["matrix/features/id"]][], 
 	Chr=data_raw[["matrix/features/chr"]][], Strand=data_raw[["matrix/features/strand"]][], Gene=data_raw[["matrix/features/gene"]][], 
-	Trans=data_raw[["matrix/features/trans"]][])
-scg[["features"]]$Count <- rowSums(scg[["matrix"]])
-scg[["features"]]$Symbol <- gtf$gene_name[match(scg[["features"]]$Gene, gtf$gene_id)]
+	Type=data_raw[["matrix/features/type"]][], UTR3=data_raw[["matrix/features/utr3"]][], UTR5=data_raw[["matrix/features/utr5"]][], 
+	Body=data_raw[["matrix/features/body"]][], Exon=data_raw[["matrix/features/exon"]][])
+sct[["features"]]$Count <- rowSums(sct[["matrix"]])
+sct[["features"]]$Symbol <- gtf$gene_name[match(sct[["features"]]$Gene, gtf$gene_id)]
 data_raw$close_all()
+osn_sct_raw <- list()
+osn_sct_raw[["trans"]] <- sct[["matrix"]]
+colnames(osn_sct_raw[["trans"]]) <- paste0("OE_", colnames(osn_sct_raw[["trans"]]))
+osn_sct_raw[["utr3"]] <- sct[["utr3"]]
+colnames(osn_sct_raw[["utr3"]]) <- paste0("OE_", colnames(osn_sct_raw[["utr3"]]))
+osn_sct_raw[["utr5"]] <- sct[["utr5"]]
+colnames(osn_sct_raw[["utr5"]]) <- paste0("OE_", colnames(osn_sct_raw[["utr5"]]))
+osn_sct_raw[["features"]] <- sct[["features"]]
+osn_sct_raw[["features"]]$ID <- sct[["features"]]$Name
+ids <- match(intersect(colnames(osn_rna), colnames(osn_sct_raw[["trans"]])), colnames(osn_sct_raw[["trans"]]))
+osn_sct_raw[["trans"]] <- osn_sct_raw[["trans"]][, ids]
+osn_sct_raw[["utr3"]] <- osn_sct_raw[["utr3"]][, ids]
+osn_sct_raw[["utr5"]] <- osn_sct_raw[["utr5"]][, ids]
+osn_sct_raw_oe <- osn_sct_raw
+
+osn_sct_raw <- list()
+terms <- intersect(osn_sct_raw_osn[["features"]]$ID, osn_sct_raw_oe[["features"]]$ID)
+terms <- terms[which(osn_sct_raw_osn[["features"]]$Exon[match(terms, osn_sct_raw_osn[["features"]]$ID)] == 
+	osn_sct_raw_oe[["features"]]$Exon[match(terms, osn_sct_raw_oe[["features"]]$ID)])]
+osn_sct_raw[["trans"]] <- cbind(osn_sct_raw_osn[["trans"]][terms,], osn_sct_raw_oe[["trans"]][terms,])
+osn_sct_raw[["utr3"]] <- cbind(osn_sct_raw_osn[["utr3"]][terms,], osn_sct_raw_oe[["utr3"]][terms,])
+osn_sct_raw[["utr5"]] <- cbind(osn_sct_raw_osn[["utr5"]][terms,], osn_sct_raw_oe[["utr5"]][terms,])
+osn_sct_raw[["features"]] <- osn_sct_raw_osn[["features"]][match(terms, osn_sct_raw_osn[["features"]]$ID),]
 
 pa <- wrap_elements(ggdraw()+draw_image("fig03_a.png", scale=1.2))+tag_thm
 termb <- rbind(rbind(data.frame(Term="A.score", Val=osn_rna$vas), data.frame(Term="P.score", Val=-osn_rna$vps)), 
@@ -208,8 +244,8 @@ pb <- ggplot(termb, aes(x=Val, fill=Term, color=Term))+geom_density(linewidth=0.
 
 osn_rna_sub <- subset(osn_rna, cells=colnames(osn_rna)[which(osn_rna$vdv != 0)])
 rec_ac <- data.frame(osn_rna_sub@meta.data)
-rec_ac$X <- osn_rna_sub@reductions[["umap"]]@cell.embeddings[, 1]
-rec_ac$Y <- osn_rna_sub@reductions[["umap"]]@cell.embeddings[, 2]
+rec_ac$X <- osn_rna_sub@reductions[["umap.rpca"]]@cell.embeddings[, 1]
+rec_ac$Y <- osn_rna_sub@reductions[["umap.rpca"]]@cell.embeddings[, 2]
 pc <- ggplot(rec_ac, aes(x=X, y=Y, color=-vdv))+geom_point(size=0.1)+
 	labs(title="Score of D > V", x="UMAP1", y="UMAP2", color="Score")+
 	scale_color_gradientn(colors=rev(brewer.pal(11, "Spectral")))+
@@ -223,8 +259,8 @@ pc <- ggplot(rec_ac, aes(x=X, y=Y, color=-vdv))+geom_point(size=0.1)+
 	axis.title=element_text(size=title_size, color="black"))+tag_thm
 osn_rna_sub <- subset(osn_rna, cells=colnames(osn_rna)[which(osn_rna$vap != 0)])
 rec_ad <- data.frame(osn_rna_sub@meta.data)
-rec_ad$X <- osn_rna_sub@reductions[["umap"]]@cell.embeddings[, 1]
-rec_ad$Y <- osn_rna_sub@reductions[["umap"]]@cell.embeddings[, 2]
+rec_ad$X <- osn_rna_sub@reductions[["umap.rpca"]]@cell.embeddings[, 1]
+rec_ad$Y <- osn_rna_sub@reductions[["umap.rpca"]]@cell.embeddings[, 2]
 pd <- ggplot(rec_ad, aes(x=X, y=Y, color=-vap))+geom_point(size=0.1)+
 	labs(title="Score of A > P", x="UMAP1", y="UMAP2", color="Score")+
 	scale_color_gradientn(colors=rev(brewer.pal(11, "Spectral")))+

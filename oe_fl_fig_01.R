@@ -294,7 +294,3 @@ ggsave(plot=wrap_plots(list(
 	pblank), ncol=1, heights=c(2.5, 3, 4, 4, 2.8))+tag_thm, 
 	width=210, height=297, dpi=300, units="mm", filename="oe_fl_fig_01.pdf", limitsize=F)
 
-
-
-
-

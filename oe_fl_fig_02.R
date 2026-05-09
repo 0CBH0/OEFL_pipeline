@@ -1002,6 +1002,31 @@ plds <- lapply(genes, function (gene) {
 		heights=c(40, 1))+plot_annotation(NULL, theme=theme(plot.margin=margin(0,0,-32,10), panel.spacing=unit(0, "pt"))))+tag_thm)
 })
 
+pblank <- wrap_elements(ggplot()+geom_blank()+theme(panel.background=element_blank()))+tag_thm
+ggsave(plot=wrap_plots(list(
+	wrap_elements(wrap_plots(list(paa,pab,pac,pad), nrow=1, widths=c(0.8,0.6,0.6,1.5))+
+	plot_annotation(tag_levels=list(c("A", "B", "C", "D")), theme=tag_thm))+tag_thm, 
+	wrap_elements(wrap_plots(list(pba,pbb,pbc), nrow=1, widths=c(1, 1, 1))+
+	plot_annotation(tag_levels=list(c("E", "", "F", "G")), theme=tag_thm))+tag_thm, 
+	wrap_elements(wrap_plots(list(pcaa, pcab, plds[[1]]), nrow=1, widths=c(1, 1, 2))+
+	plot_annotation(tag_levels=list(c("H", "", "K")), theme=tag_thm))+tag_thm, 
+	wrap_elements(wrap_plots(list(pda,pdb, plds[[2]]), nrow=1, widths=c(1, 1, 2))+
+	plot_annotation(tag_levels=list(c("I", "J", "L")), theme=tag_thm))+tag_thm, 
+	pblank), ncol=1, heights=c(1,1,1,1,1.25)), 
+	width=210, height=297, dpi=300, units="mm", filename="oe_fl_fig_02.png", limitsize=F)
+
+ggsave(plot=wrap_plots(list(
+	wrap_elements(wrap_plots(list(paa,pab,pac,pad), nrow=1, widths=c(0.8,0.6,0.6,1.5))+
+	plot_annotation(tag_levels=list(c("A", "B", "C", "D")), theme=tag_thm))+tag_thm, 
+	wrap_elements(wrap_plots(list(pba,pbb,pbc), nrow=1, widths=c(1, 1, 1))+
+	plot_annotation(tag_levels=list(c("E", "", "F", "G")), theme=tag_thm))+tag_thm, 
+	wrap_elements(wrap_plots(list(pcaa, pcab, plds[[1]]), nrow=1, widths=c(1, 1, 2))+
+	plot_annotation(tag_levels=list(c("H", "", "K")), theme=tag_thm))+tag_thm, 
+	wrap_elements(wrap_plots(list(pda,pdb, plds[[2]]), nrow=1, widths=c(1, 1, 2))+
+	plot_annotation(tag_levels=list(c("I", "J", "L")), theme=tag_thm))+tag_thm, 
+	pblank), ncol=1, heights=c(1,1,1,1,1.25)), 
+	width=210, height=297, dpi=300, units="mm", filename="oe_fl_fig_02.pdf", limitsize=F)
+
 #cmp_raw_filter <- read.csv("cmp_res_raw_filter.csv", h=T, r=1)
 #ego_total <- data.frame()
 #for (type in 1:4)
@@ -1049,28 +1074,3 @@ plds <- lapply(genes, function (gene) {
 #	if (nrow(ego_total) == 0) ego_total <- ego else ego_total <- rbind(ego_total, ego)
 #}
 #write.csv(ego_total, "cmp_raw_go2.csv")
-
-pblank <- wrap_elements(ggplot()+geom_blank()+theme(panel.background=element_blank()))+tag_thm
-ggsave(plot=wrap_plots(list(
-	wrap_elements(wrap_plots(list(paa,pab,pac,pad), nrow=1, widths=c(0.8,0.6,0.6,1.5))+
-	plot_annotation(tag_levels=list(c("A", "B", "C", "D")), theme=tag_thm))+tag_thm, 
-	wrap_elements(wrap_plots(list(pba,pbb,pbc), nrow=1, widths=c(1, 1, 1))+
-	plot_annotation(tag_levels=list(c("E", "", "F", "G")), theme=tag_thm))+tag_thm, 
-	wrap_elements(wrap_plots(list(pcaa, pcab, plds[[1]]), nrow=1, widths=c(1, 1, 2))+
-	plot_annotation(tag_levels=list(c("H", "", "K")), theme=tag_thm))+tag_thm, 
-	wrap_elements(wrap_plots(list(pda,pdb, plds[[2]]), nrow=1, widths=c(1, 1, 2))+
-	plot_annotation(tag_levels=list(c("I", "J", "L")), theme=tag_thm))+tag_thm, 
-	pblank), ncol=1, heights=c(1,1,1,1,1.25)), 
-	width=210, height=297, dpi=300, units="mm", filename="oe_fl_fig_02.png", limitsize=F)
-
-ggsave(plot=wrap_plots(list(
-	wrap_elements(wrap_plots(list(paa,pab,pac,pad), nrow=1, widths=c(0.8,0.6,0.6,1.5))+
-	plot_annotation(tag_levels=list(c("A", "B", "C", "D")), theme=tag_thm))+tag_thm, 
-	wrap_elements(wrap_plots(list(pba,pbb,pbc), nrow=1, widths=c(1, 1, 1))+
-	plot_annotation(tag_levels=list(c("E", "", "F", "G")), theme=tag_thm))+tag_thm, 
-	wrap_elements(wrap_plots(list(pcaa, pcab, plds[[1]]), nrow=1, widths=c(1, 1, 2))+
-	plot_annotation(tag_levels=list(c("H", "", "K")), theme=tag_thm))+tag_thm, 
-	wrap_elements(wrap_plots(list(pda,pdb, plds[[2]]), nrow=1, widths=c(1, 1, 2))+
-	plot_annotation(tag_levels=list(c("I", "J", "L")), theme=tag_thm))+tag_thm, 
-	pblank), ncol=1, heights=c(1,1,1,1,1.25)), 
-	width=210, height=297, dpi=300, units="mm", filename="oe_fl_fig_02.pdf", limitsize=F)
